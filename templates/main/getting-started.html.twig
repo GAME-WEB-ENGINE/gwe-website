@@ -1,0 +1,26 @@
+{% extends "main/base.html.twig" %}
+
+{% block content %}
+	{% apply markdown_to_html %}
+    ## Commencer
+    Tout d'abord, vérifier que **node.js** et **npm** sont bien installé sur votre poste.
+    Si c'est le cas, je vous invite à cloner le projet de démarrage.
+    
+    <code>git clone https://github.com/ra1jin/gwe-template-boilerplate.git</code>.
+
+    Puis rentrer dans le dossier.
+
+    <code>cd gwe-template-boilerplate</code>
+
+    Installer les dépendances (dont gwe)
+
+    <code>npm install</code>
+
+    Lancer le programme
+
+    <code>npm start</code>
+
+    ## Comment intégrer vos modèles 3D ?
+    L'extension Blender [blender-gwe-exporter](https://github.com/ra1jin/blender-gwe-exporter) vous permet d'exporter vos modèles statiques et animés dans les formats compatible GWE !
+	{% endapply %}
+{% endblock %}

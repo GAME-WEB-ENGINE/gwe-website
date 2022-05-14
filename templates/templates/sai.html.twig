@@ -1,0 +1,57 @@
+{% include "templates/base.html.twig" with {
+    'disabled': true,
+	'title': 'GWE - Template Sai',
+	'banner': '../images/banner-template-sai.jpg',
+	'bannerAlt': 'Sai banner',
+    'status': 'Non disponible',
+	'version': '1.0.0',
+	'difficulty': '7/10',
+	'projection': '2D',
+    'graphics': 'Basique',
+	'genre': 'CCG',
+	'author': 'Raijin',
+	'tags': ['2d', 'battle', 'card', 'ccg'],
+	'closeups': ['images/template-sai-00.png'],
+	'md': "
+## Sai   
+Sai est un module qui contient les mécaniques de base d'un jeu de carte à collectionner.
+Créez vos propres cartes, effets, conditions d'activation, déclencheurs et mécaniques afin de développer votre game design.   
+Et si cela ne suffit pas, vous pouvez facilement personnaliser le code selon vos besoins grâce à une base de code propre et bien structurée.   
+   
+**Fonctionnalités:**
+- Plateau
+    - Deux duelistes (pas d'ia pour le moment)
+    - Invocation
+    - Poser
+    - Changement de position attaque/defense
+    - Pioche
+    - Attaque directe
+    - Attaque monstre
+    - Carte monstre (attaque/defense, race, élément)
+    - Carte magie (type, mode, element, effets)
+        - Activation manuelle pour le mode 'activable'
+        - Déclenchement sous condition pour le mode 'déclenchable'
+        - Envoyé au cimetière après activation pour le type 'normal'
+        - Reste sur le terrain avec activation avec effet persistant pour le type 'continue'
+    - Effets de cartes (type de ciblage, zone d'influence, condition de ciblage, liaison de cartes)
+        - Ciblage unique pour le type 'seul'
+        - Ciblage automatique et multiple pour le type 'champs'
+        - Cible les cartes d'une certaine zone du plateau
+        - Cible les cartes correspondants aux critères de la condition de ciblage
+        - Liaison d'un effet à une carte
+    - 12 mécaniques différentes (facilement extensibles)
+    - 2 condition de ciblage (facilement extensibles)
+    - Découpage d'un tour en plusieurs phases
+    - Menu d'actions parmis celles autorisé lors de la phase courante
+    - Navigation dans le plateau avec ciblage en cascade
+   
+**Actifs artistiques:**
+- Images de fonds
+- Images de cartes
+   
+**Licence:**   
+Vous êtes autorisé à utiliser ce modèle de projet dans votre jeu commercial.
+Vous n'êtes pas autorisé à distribuer ou à revendre le code source, les actifs et les fichiers contenus dans ce package.
+Vous êtes autorisé à distribuer ou à vendre l'exécutable compilé créé à l'aide de ceci.
+	" }
+%}
