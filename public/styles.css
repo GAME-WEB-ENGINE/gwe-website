@@ -103,6 +103,14 @@ a img {
   user-select: none !important;
 }
 
+.button--buy,
+.button--buy:hover,
+.button--buy:active {
+  background-color: #f6cf06;
+  color: #312901;
+  text-shadow: 0 1px 0px transparent;
+}
+
 /**********************/
 /** CARD **************/
 /**********************/
@@ -369,8 +377,10 @@ a img {
 }
 
 .buy-message {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   align-items: center;
+  justify-content: center;
 }
 
 .buy-money {
@@ -451,68 +461,4 @@ a img {
   display: block;
   max-width: 100%;
   margin-bottom: 10px;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#extras {
-  float: right;
-  width: 100px;
-  margin: 0 0 10px 0;
-  padding: 0;
-  font-size: 0.9em;
-  line-height: 1.5em;
-}
-
-#extras p {
-  margin: 0 0 1.5em 0;
-}
-
-
-
-
-
-#content img {
-  display: inline;
-  background: #cccccc;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-.button {
-  margin-right: 10px;
-}
-
-.button,
-.button:hover,
-.button:active {
-  background-color: #f6cf06;
-  color: #312901;
-  text-shadow: 0 1px 0px transparent;
 }

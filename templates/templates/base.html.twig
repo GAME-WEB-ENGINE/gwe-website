@@ -32,11 +32,13 @@
 							</div>
 							<div class="module-content">
 								<div class="buy">
-									<a href="#" class="button {{ disabled ? 'button--disabled' }}">Acheter maintenant</a>
-									<span class="buy-message">
-										<span class="buy-money">€{{ price }} EUR</span>
-										<span class="buy-sub">ou plus</span>
-									</span>
+									<a href="#" class="button button--buy {{ disabled ? 'button--disabled' }}">{{ disabled ? 'Indisponible pour le moment' : 'Acheter maintenant' }}</a>
+									{% if disabled == false %}
+										<span class="buy-message">
+											<span class="buy-money">{{ price }} EUR</span>
+											<span class="buy-sub">ou plus</span>
+										</span>
+									{% endif %}
 								</div>
 							</div>
 						</div>
