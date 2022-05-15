@@ -23,7 +23,7 @@ Et si cela ne suffit pas, vous pouvez facilement personnaliser le code selon vos
 **Fonctionnalités:**
 - Joueur
     - Liste des héros
-    - Argent
+    - Quantité d'argent
     - Inventaire
     - Système de variables utilisables dans les scripts (utile pour avancer dans l'histoire)
 - Personnage
@@ -31,14 +31,31 @@ Et si cela ne suffit pas, vous pouvez facilement personnaliser le code selon vos
     - Image avatar
     - Sprite de combat
     - Liste d'effets
+    - Liste des sceaux actifs
     - Gestion des statistiques avec modificateurs
 - Hero
     - 4 objets d'equipements différents
-- Objet
+- Effet
+    - Sprite de combat
+    - Lance une mécanique
+    - Cible un personnage correspondants aux critères de la condition de ciblage
+- Mécanique (facilement extensible)
+    - Restauration
+    - Dommage
+    - Augmentation du mana
+    - Réduction du mana
+    - Ajout d'un sceaux
+    - Retire un sceaux
+- Sceaux
+    - Peut-être empilé ou non-empilé
+    - Durée de vie (en nombre de tour)
+    - Liste de modificateurs de stats (buf/debuf)
+    - Peut contenir un effet (celui-ci sera exécuté à chaque tour)
+- Objet commun
     - Peut contenir un effet
     - Utilisable en combat uniquement, hors combat uniquement ou les deux
 - Objet équipement
-    - Ne contient pas d'effet
+    - Liste de modificateurs de stats
     - Peut-être de 4 type différents (épée, armure, casque, amulette)
     - Contient une sous-catégorie (epée_xxxx, épée_yyyy, etc...)
 - Système de combat tour par tour (deux dimensions)
