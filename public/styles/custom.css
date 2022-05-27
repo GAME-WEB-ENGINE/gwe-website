@@ -24,6 +24,13 @@ figcaption {
   text-align: center;
 }
 
+code {
+  background-color: #565656;
+  color: #fff;
+  display: block;
+  padding: 5px;
+}
+
 h3 {
   font-size: 1.3em;
   margin: 0 0 10px 0;
