@@ -297,6 +297,12 @@ tr > th:last-child { border-right: 1px solid #ddd; }
 
 .params .name, .props .name, .name code {
     color: #4D4E53;
+    font-family: Consolas, Monaco, 'Andale Mono', monospace;
+    font-size: 100%;
+}
+
+.name code {
+    color: #4D4E53;
     background-color: #FFF;
     padding: 0;
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
