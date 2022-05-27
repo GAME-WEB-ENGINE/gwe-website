@@ -13,7 +13,7 @@ class MainController extends AbstractController
    */
   public function index(): Response
   {
-    return $this->render('main/home.html.twig');
+    return $this->render('home.html.twig');
   }
 
   /**
@@ -21,78 +21,16 @@ class MainController extends AbstractController
    */
   public function gettingStarted(): Response
   {
-    return $this->render('main/getting-started.html.twig', [
-      'controller_name' => 'MainController',
-    ]);
+    return $this->render('getting-started.html.twig');
   }
 
   /**
-   * @Route("/templates", name="templates")
+   * @Route("/documentation/{file}", name="documentation")
    */
-  public function templates(): Response
+  public function documentation(string $file): Response
   {
-    return $this->render('main/templates.html.twig', [
-      'controller_name' => 'MainController',
-    ]);
-  }
-
-  /**
-   * @Route("/templates-jessie", name="templates-jessie")
-   */
-  public function templateJessie(): Response
-  {
-    return $this->render('templates/jessie.html.twig', [
-      'controller_name' => 'MainController',
-    ]);
-  }
-
-  /**
-   * @Route("/templates-luna", name="templates-luna")
-   */
-  public function templateLuna(): Response
-  {
-    return $this->render('templates/luna.html.twig', [
-      'controller_name' => 'MainController',
-    ]);
-  }
-
-  /**
-   * @Route("/templates-odin", name="templates-odin")
-   */
-  public function templateOdin(): Response
-  {
-    return $this->render('templates/odin.html.twig', [
-      'controller_name' => 'MainController',
-    ]);
-  }
-
-  /**
-   * @Route("/templates-sai", name="templates-sai")
-   */
-  public function templateSai(): Response
-  {
-    return $this->render('templates/sai.html.twig', [
-      'controller_name' => 'MainController',
-    ]);
-  }
-
-  /**
-   * @Route("/templates-thunar", name="templates-thunar")
-   */
-  public function templateThunar(): Response
-  {
-    return $this->render('templates/thunar.html.twig', [
-      'controller_name' => 'MainController',
-    ]);
-  }
-
-  /**
-   * @Route("/templates-edgar", name="templates-edgar")
-   */
-  public function templateEdgar(): Response
-  {
-    return $this->render('templates/edgar.html.twig', [
-      'controller_name' => 'MainController',
+    return $this->render('documentation.html.twig', [
+      'file' => $file
     ]);
   }
 }

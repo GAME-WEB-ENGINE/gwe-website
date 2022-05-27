@@ -1,0 +1,92 @@
+{% extends "base.html.twig" %}
+
+{% block content %}
+	<h2>{{ project.name }}</h2>
+	<center>
+		<img class="project-banner" src="{{ project.banner }}" alt="{{ project.bannerAlt }}"/>
+	</center>
+	<div class="u-row u-row--gutter">
+		<div class="u-col u-width--8of12">
+			{% apply markdown_to_html %}{{ project.md }}{% endapply %}
+			{% for closeup in project.closeups|split(',') %}
+				<img src="{{ closeup }}" class="project-closeup"/>
+			{% endfor %}
+		</div>
+		<div class="u-col u-width--4of12">
+			<div class="module u-margin--top u-margin--bottom">
+				<div class="module-header">
+					<h1 class="module-header-title">Télécharger</h1>
+				</div>
+				<div class="module-content">
+					<div class="buy">
+						<a href="#" class="button button--buy {{ project.disabled ? 'button--disabled' }}">
+							{{ project.disabled ? 'Indisponible' : 'Itch.io' }}
+						</a>
+						{% if project.disabled == false %}
+							<span class="buy-message">
+								<span class="buy-money">{{ project.price }}
+									EUR</span>
+								<span class="buy-sub">ou plus</span>
+							</span>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+			<div class="module u-margin--bottom">
+				<div class="module-header">
+					<h1 class="module-header-title">Plus d'informations</h1>
+				</div>
+				<div class="module-content">
+					<div class="stats">
+						<ul>
+							<li>
+								<span>Statut</span>
+								<strong>{{ project.status }}</strong>
+							</li>
+							<li>
+								<span>Version</span>
+								<strong>{{ project.version }}</strong>
+							</li>
+							<li>
+								<span>Difficulté</span>
+								<strong>{{ project.difficulty }}</strong>
+							</li>
+							<li>
+								<span>Projection</span>
+								<strong>{{ project.projection }}</strong>
+							</li>
+							<li>
+								<span>Graphique</span>
+								<strong>{{ project.graphics }}</strong>
+							</li>
+							<li class="divider"></li>
+							<li>
+								<span>Genre</span>
+								<strong>{{ project.genre }}</strong>
+							</li>
+							<li>
+								<span>Auteur</span>
+								<strong>{{ project.author }}</strong>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="module u-margin--bottom">
+				<div class="module-header">
+					<h1 class="module-header-title">Tags</h1>
+				</div>
+				<div class="module-content">
+					<ul class="words">
+						{% for tag in project.tags|split(',') %}
+							<li class="word-item">
+								<a class="word-link" href="#">{{ tag }}</a>
+							</li>
+						{% endfor %}
+					</ul>
+				</div>
+			</div>
+
+		</div>
+	</div>
+{% endblock %}

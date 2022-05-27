@@ -1,0 +1,193 @@
+<div id="main">
+    
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><img src="https://ra1jin.github.io/images/gwe_logo.png" alt="logo" width="400"/>
+<p><img src="https://img.shields.io/badge/lang-javascript-f39f37" alt="Drag Racing"> <img src="https://img.shields.io/badge/npm-v1.0.1-blue" alt="Drag Racing"> <img src="https://img.shields.io/badge/release-v1.1.3-blue" alt="Drag Racing"> <img src="https://img.shields.io/badge/dependencies-electron-brightgreen" alt="Drag Racing"></p>
+<p>Copyright © 2020-2022 [Raijin].</p>
+<p>Nombreux sont les <strong>développeurs web</strong> qui souhaitent créer leurs propres <strong>jeux vidéo</strong>, c'est maintenant possible grâce à <strong>GWE</strong> alias <strong>Game Web Engine</strong>, un <strong>moteur de jeu 2D/3D</strong> basé sur les technologies du <strong>web</strong>.<br>
+Pas besoin d'apprendre un nouveau langage, si vous maîtrisez <strong>HTML/JS/CSS</strong> alors ce moteur est fait pour vous.</p>
+<p>De plus, grâce à son projet de démarrage, ce moteur intègre tout le nécessaire pour commencer à développer un jeu vidéo avec un <strong>minimum d'efforts</strong>.</p>
+<h2>Demo</h2>
+<p>Un exemple de démarrage est disponible <a href="https://github.com/ra1jin/gwe-template-boilerplate">ici</a></p>
+<h2>Fonctionnalités générales</h2>
+<ul>
+<li>Un gestionnaire graphique</li>
+<li>Un gestionnaire des différents &quot;écrans&quot; du jeu</li>
+<li>Un gestionnaire des ressources texture</li>
+<li>Un gestionnaire des ressources son</li>
+<li>Un gestionnaire des évènements</li>
+<li>Un gestionnaire des entrées clavier/souris</li>
+<li>Un gestionnaire de l'interface utilisateur à base de &quot;widget&quot; (plus de 16 widgets de bases)</li>
+<li>Un gestionnaire de script</li>
+<li>Support de plusieurs vues caméra 2D et 3D</li>
+<li>Support des meshs de navigation (JWM)</li>
+<li>Support des images statiques (JSS)</li>
+<li>Support des images animées (JAS)</li>
+<li>Support des meshs texturés statiques (JSM)</li>
+<li>Support des meshs texturés animés (JAM)</li>
+<li>Support des formes géométriques de debug</li>
+</ul>
+<h2>Quelques partis pris concernant ce travail</h2>
+<ul>
+<li>Utiliser le DOM pour les éléments UI</li>
+<li>Utiliser un format 3D dédié au moteur (voir exportateur Blender)</li>
+<li>Utiliser un format 3D avec des animations frame par frame</li>
+</ul>
+<h2>Installation</h2>
+<p>Tout d'abord, vérifier que Node.js est bien installé sur votre environnement.<br>
+Si c'est le cas, installer cette librairie dans votre projet avec la commande suivante : <code>npm install --save gwe</code></p>
+<h2>Commencer</h2>
+<p>Voici le minimum requis pour commencer à travailler avec gwe.<br>
+Commencer par créer un projet avec l'arborescence suivante.</p>
+<pre class="prettyprint source"><code>├── assets
+    ├──
+├── src
+│   ├── app.js
+│   ├── main_screen.js
+├── index.html
+├── main.js
+</code></pre>
+<h3>main.js (electron)</h3>
+<pre class="prettyprint source lang-js"><code>const { app, BrowserWindow } = require('electron');
+
+app.whenReady().then(() => {
+ createWindow()
+});
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 800,
+    height: 600, // +26 for window frame
+    resizable: false,
+    frame: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    }
+  });
+
+  win.setMenuBarVisibility(false)
+  win.loadFile('index.html');
+  win.openDevTools();
+}
+</code></pre>
+<h3>index.html</h3>
+<pre class="prettyprint source lang-html"><code>&lt;!DOCTYPE html>
+&lt;html lang=&quot;fr&quot;>
+  &lt;head>
+    &lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;node_modules/gwe/core.css&quot; />
+    &lt;script rel=&quot;preload&quot; type=&quot;text/javascript&quot; src=&quot;src/app.js&quot;>&lt;/script>
+  &lt;/head>
+  &lt;body style=&quot;position:relative&quot;>
+    &lt;div id=&quot;APP&quot;>
+      &lt;canvas id=&quot;CANVAS&quot; width=&quot;1px&quot; height=&quot;1px&quot;>&lt;/canvas>
+      &lt;div id=&quot;UI_ROOT&quot;>&lt;/div>
+      &lt;div id=&quot;UI_FADELAYER&quot;>&lt;/div>
+      &lt;div id=&quot;UI_OVERLAYER&quot;>&lt;/div>
+    &lt;/div>
+  &lt;/body>
+&lt;/html>
+</code></pre>
+<h3>src/app.js</h3>
+<pre class="prettyprint source lang-js"><code>window.addEventListener('load', async () => {
+  let { GWE } = require('gwe');
+  let app = new GWE.Application(800, 800, GWE.SizeModeEnum.FIXED);
+  requestAnimationFrame(ts => app.run(ts));
+});
+</code></pre>
+<h3>src/main_screen.js</h3>
+<pre class="prettyprint source lang-js"><code>let { GWE } = require('gwe');
+
+class MainScreen  extends  GWE.Screen {
+  constructor(app) {
+    super(app);
+  }
+
+  onEnter() {
+    // votre code d'initialisation doit être ici.
+  }
+
+  onExit() {
+    // votre code de destruction doit être ici.
+  }
+	
+  update(ts) {
+    // votre code logique de mise à jour.
+  }
+
+  draw(viewIndex) {
+    // votre code de dessin.
+  }
+}
+
+module.exports.MainScreen = MainScreen;
+</code></pre>
+<p>Ajouter et charger l'écran &quot;MainScreen&quot; afin que celui-ci soit lancé via la ligne suivante <code>GWE.screenManager.requestSetScreen(new  MainScreen(app));</code> dans le fichier <strong>app.js</strong>.</p>
+<h2>Documentation</h2>
+<p>Une documentation est disponible ici: https://ra1jin.github.io/gwe-doc/ (bientot en anglais).</p>
+<h2>Templates</h2>
+<p>L'atout principal de GWE est son nombre conséquent de <strong>projets template</strong>.
+Une template est un <strong>projet générique</strong> basé sur un <strong>genre spécifique</strong> comme par ex: j-rpg, ccg, board, visual novel, etc...
+L'intêret est de partir d'une <strong>base solide</strong> et de l'adapter afin de créer votre propre jeu vidéo.
+Les templates sont payantes mais le <strong>gain de temps</strong> est énorme et le prix plus que raisonnable.</p>
+<p><img src="https://ra1jin.github.io/images/gwe_board.png" alt="Drag Racing"></p>
+<p>Voici la liste des templates actuellement disponibles:</p>
+<ul>
+<li><strong>gwe-template-thunar</strong> - Module de scène (JRPG 3D Pré-calc)</li>
+<li><strong>gwe-template-odin</strong> - Module de combat deux dimensions tour par tour + menu (JRPG).</li>
+<li><strong>gwe-template-sai</strong> - Module jeu de carte à collectionner (CCG).</li>
+<li><strong>gwe-template-edgar</strong> - Module visual novel (VN).</li>
+<li><strong>gwe-template-manua</strong> - Module conçu pour les jeux de société en introduisant un modèle de programmation simplifié.</li>
+</ul>
+<p>Template à venir:</p>
+<ul>
+<li><strong>gwe-template-bestla</strong> - Module de combat trois dimensions tour par tour + menu (JRPG)</li>
+<li><strong>gwe-template-hades</strong>- Module quake-like basique (FPS)</li>
+</ul>
+<h2>Comment intégrer vos modèles 3D ?</h2>
+<p>L'extension Blender <a href="https://github.com/ra1jin/blender-gwe-exporter">blender-gwe-exporter</a> vous permet d'exporter vos modèles statiques et animés dans les formats compatible GWE !</p>
+<h2>Todos</h2>
+<ul>
+<li>Transposer les éléments GFX 2D du plan xy vers le plan xz.</li>
+<li>Implémenter JAPS alias JSON Animated Polygon Sprite.</li>
+<li>Implémenter Billboard.</li>
+<li>Implémenter Skybox.</li>
+<li>Optimiser walkmesh.</li>
+</ul></article>
+    </section>
+
+
+
+
+
+
+</div>
+
+<nav>
+    <h3>Classes</h3><ul><li><a href="Application.html">Application</a></li><li><a href="ArrayCollection.html">ArrayCollection</a></li><li><a href="BoundingBox.html">BoundingBox</a></li><li><a href="BoundingRect.html">BoundingRect</a></li><li><a href="EventManager.html">EventManager</a></li><li><a href="EventSubscriber.html">EventSubscriber</a></li><li><a href="GfxDrawable.html">GfxDrawable</a></li><li><a href="GfxJAM.html">GfxJAM</a></li><li><a href="GfxJAS.html">GfxJAS</a></li><li><a href="GfxJSM.html">GfxJSM</a></li><li><a href="GfxJSS.html">GfxJSS</a></li><li><a href="GfxJWM.html">GfxJWM</a></li><li><a href="GfxManager.html">GfxManager</a></li><li><a href="GfxMover.html">GfxMover</a></li><li><a href="GfxView.html">GfxView</a></li><li><a href="GfxViewport.html">GfxViewport</a></li><li><a href="InputManager.html">InputManager</a></li><li><a href="IOFilepacker.html">IOFilepacker</a></li><li><a href="IOJSONSerializer.html">IOJSONSerializer</a></li><li><a href="KeydownEvent.html">KeydownEvent</a></li><li><a href="KeydownOnceEvent.html">KeydownOnceEvent</a></li><li><a href="KeyupEvent.html">KeyupEvent</a></li><li><a href="MouseButtonDownEvent.html">MouseButtonDownEvent</a></li><li><a href="MouseButtonUpEvent.html">MouseButtonUpEvent</a></li><li><a href="MouseDragBeginEvent.html">MouseDragBeginEvent</a></li><li><a href="MouseDragEndEvent.html">MouseDragEndEvent</a></li><li><a href="MouseDragEvent.html">MouseDragEvent</a></li><li><a href="MouseMoveEvent.html">MouseMoveEvent</a></li><li><a href="Screen.html">Screen</a></li><li><a href="ScreenManager.html">ScreenManager</a></li><li><a href="ScriptMachine.html">ScriptMachine</a></li><li><a href="SoundManager.html">SoundManager</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureManager.html">TextureManager</a></li><li><a href="UIManager.html">UIManager</a></li><li><a href="UIWidget.html">UIWidget</a></li></ul><h3>Global</h3><ul><li><a href="global.html#InputKeyEnum">InputKeyEnum</a></li><li><a href="global.html#ProjectionModeEnum">ProjectionModeEnum</a></li><li><a href="global.html#SizeModeEnum">SizeModeEnum</a></li></ul>
+</nav>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>

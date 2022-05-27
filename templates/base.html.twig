@@ -1,0 +1,49 @@
+<!DOCTYPE html PUBLIC>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr" lang="fr">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <meta name="description" content="GWE alias Game Web Engine is a tree-dimensions game engine pretty simple and fun to used !">
+  <meta name="keywords" content="game engine, game, engine, 3d, 2d, webgl, graphics, graphics engine, web game engine, web">
+  <meta name="author" content="raijin#6313">
+
+  <script src="/scripts/prettify/prettify.js"> </script>
+  <script src="/scripts/prettify/lang-css.js"> </script>
+  <link type="text/css" rel="stylesheet" href="/styles/prettify-tomorrow.css">
+  <link type="text/css" rel="stylesheet" href="/styles/jsdoc-default.css">
+  <link rel="stylesheet" type="text/css" href="/styles/core.css" media="screen">
+  <link rel="stylesheet" type="text/css" href="/styles/custom.css" media="screen">
+  <title>GWE - Game Web Engine</title>
+</head>
+
+<body class="main">
+  <div class="main-wrap">
+    <center>
+      <img class="main-logo" src="/images/gwe.png" width="260">
+    </center>
+    <div class="u-fx">
+      <div class="menu">
+        <ul>
+          <li><a href="/" class="{{ app.request.get('_route') == 'home' ? 'active' }}">A propos</a></li>
+          <li><a href="/documentation/Application.html" class="{{ app.request.get('_route') == 'documentation' ? 'active' }}">Documentation</a></li>
+          <li><a href="/getting-started" class="{{ app.request.get('_route') == 'getting-started' ? 'active' }}">Commencer</a></li>
+          <li><a href="/project/list" class="{{ app.request.get('_route') == 'project-list' ? 'active' }}">Projets</a></li>
+          <li><a href="/addon/list" class="{{ app.request.get('_route') == 'addon-list' ? 'active' }}">Addons</a></li>
+          <li><a href="https://github.com/ra1jin/gwe">Github</a></li>
+          <li><a href="mailto:julien.rog24@gmail.com">Email Raijin</a></li>
+        </ul>
+        <div class="announce">
+          <h3>A venir :</h3>
+          <p>Combat tour par tour en trois dimensions.</p>
+        </div>
+      </div>
+      <div class="main-content">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+    <div class="footer">
+      Copyright © 2022 Raijin#6313. Design by <a href="#">@Me</a>.
+    </div>
+  </div>
+</body>
+</html>

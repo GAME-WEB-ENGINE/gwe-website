@@ -1,0 +1,26 @@
+{% extends "base.html.twig" %}
+
+{% block content %}
+	<h2>Projets</h2>
+	<div class="u-row u-row--gutter">
+		{% for project in projects %}
+			<div class="u-col u-width--1of2">
+				<div class="card">
+					<div class="card-header">
+						<img class="card-header-img-top" src="{{ project.thumbnail }}">
+						<span class="badge badge--cat">{{ project.genre }}</span>
+					</div>
+					<div class="card-body">
+						<h5 class="card-body-title">{{ project.name }}</h5>
+						<span class="card-body-subtitle u-text-muted">@version {{ project.version }}</span>
+						<div class="card-body-text"> {{ project.description }}
+						</div>
+					</div>
+					<div class="card-footer">
+						<a href="/project/view/{{ project.id }}" class="card-footer-btn">Details</a>
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+{% endblock %}

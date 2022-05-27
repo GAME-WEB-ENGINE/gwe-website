@@ -1,0 +1,17 @@
+{% extends "base.html.twig" %}
+
+{% block content %}
+	<h2>Addons</h2>
+    {% for addon in addons %}
+        <div class="addon u-margin--bottom">
+            <div class="addon-head">
+                <div class="addon-head-name">{{ addon.name }}</div>
+                <div class="addon-head-version">Version {{ addon.version }}</div>
+            </div>
+            <div class="addon-body">
+                <div class="addon-body-description">{{ addon.description }}</div>
+                <a href="{{ addon.link }}" class="addon-body-link">{{ addon.link }} </a>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}
