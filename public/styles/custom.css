@@ -429,6 +429,7 @@ a img {
 
 .main-content {
   padding-left: 20px;
+  flex:1;
 }
 
 .main-content h2 {
