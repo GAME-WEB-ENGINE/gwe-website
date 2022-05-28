@@ -28,13 +28,16 @@
           <li><a href="/documentation/Application.html" class="{{ app.request.get('_route') == 'documentation' ? 'active' }}">Documentation</a></li>
           <li><a href="/getting-started" class="{{ app.request.get('_route') == 'getting-started' ? 'active' }}">Commencer</a></li>
           <li><a href="/project/list" class="{{ app.request.get('_route') matches '{^project}' ? 'active' }}">Projets</a></li>
-          <li><a href="/addon/list" class="{{ app.request.get('_route') == 'addon-list' ? 'active' }}">Addons</a></li>
+          <li><a href="/addon/list" class="{{ app.request.get('_route') == 'addon-list' ? 'active' }}">Modules</a></li>
+          <li><a href="/tools" class="{{ app.request.get('_route') == 'tools' ? 'active' }}">Outils</a></li>
           <li><a href="https://github.com/ra1jin/gwe">Github</a></li>
           <li><a href="mailto:julien.rog24@gmail.com">Email Raijin</a></li>
         </ul>
         <div class="announce">
-          <h3>A venir :</h3>
-          <p>Combat tour par tour en trois dimensions.</p>
+          {% apply markdown_to_html %}
+            **Travaux en cours:**    
+            Combat tour par tour en trois dimensions.
+          {% endapply %}
         </div>
       </div>
       <div class="main-content">

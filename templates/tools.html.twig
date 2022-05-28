@@ -1,0 +1,9 @@
+{% extends "base.html.twig" %}
+
+{% block content %}
+  <h2>Outils</h2>
+	{% apply markdown_to_html %}
+    L'outil [blender-gwe-exporter](https://github.com/ra1jin/blender-gwe-exporter/blob/master/build/GWEExporter.zip) est une extension Blender qui permet d'exporter vos modèles 3D dans les formats JAM, JSM et JWM !  
+  {% endapply %}
+  <img class="u-img-block" src="/images/exporter_blender.png"/>
+{% endblock %}

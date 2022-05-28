@@ -321,9 +321,8 @@ a img {
   line-height: 1.3em;
 }
 
-.announce h3 {
-  font-size: 1rem;
-  font-weight: bold;
+.announce p {
+  margin:0;
 }
 
 /**********************/

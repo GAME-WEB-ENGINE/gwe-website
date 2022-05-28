@@ -25,6 +25,14 @@ class MainController extends AbstractController
   }
 
   /**
+   * @Route("/tools", name="tools")
+   */
+  public function tools(): Response
+  {
+    return $this->render('tools.html.twig');
+  }
+
+  /**
    * @Route("/documentation/{file}", name="documentation")
    */
   public function documentation(string $file): Response
