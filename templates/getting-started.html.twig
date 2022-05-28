@@ -1,22 +1,37 @@
 {% extends "base.html.twig" %}
 
 {% block content %}
-    <h2>Commencer</h2>
+	<h2>Commencer</h2>
 	{% apply markdown_to_html %}
-    Tout d'abord, vérifier que **node.js** et **npm** sont bien installés sur votre poste.
-    Si c'est le cas, je vous invite à cloner le projet de démarrage.
+    Pour commencer un nouveau projet deux solutions s'offre à vous.   
+    Vous pouvez télécharger le boilerplate [ici](https://github.com/ra1jin/gwe-template-boilerplate) ou créer votre projet
+    de zéro en suivant les étapes suivantes.
     
-    <code>$ git clone https://github.com/ra1jin/gwe-template-boilerplate.git</code>
-   
-    <code>$ cd gwe-template-boilerplate</code>
-    
-    <code>$ npm install</code>
-    
-    Lancer le programme
-    
-    <code>$ npm start</code>
+    <figure class="u-margin--bottom">
+      <img src="/images/code_folders.png" alt="Trulli" style="width:100%">
+      <figcaption>Créer l'arborescence ci-dessus</figcaption>
+    </figure>
 
-    ## Comment intégrer vos modèles 3D ?
-    L'extension Blender [blender-gwe-exporter](https://github.com/ra1jin/blender-gwe-exporter) vous permet d'exporter vos modèles statiques et animés dans les formats compatibles GWE !
+    <figure class="u-margin--bottom">
+      <img src="/images/code_main.png" alt="Trulli" style="width:100%">
+      <figcaption>Contenu du fichier main.js (point d'entré electron)</figcaption>
+    </figure>
+
+    <figure class="u-margin--bottom">
+      <img src="/images/code_index.png" alt="Trulli" style="width:100%">
+      <figcaption>Contenu du fichier index.html</figcaption>
+    </figure>
+
+    <figure class="u-margin--bottom">
+      <img src="/images/code_app.png" alt="Trulli" style="width:100%">
+      <figcaption>Contenu du fichier app.js</figcaption>
+    </figure>
+
+    <figure class="u-margin--bottom">
+      <img src="/images/code_main_screen.png" alt="Trulli" style="width:100%">
+      <figcaption>Contenu du fichier main_screen.js</figcaption>
+    </figure>
+
+    Félicitation, vous avez créer votre premier projet gwe !
 	{% endapply %}
 {% endblock %}

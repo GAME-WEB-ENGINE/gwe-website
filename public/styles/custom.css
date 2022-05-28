@@ -12,7 +12,6 @@ figure {
   display: flex;
   flex-flow: column;
   padding: 5px;
-  max-width: 220px;
   margin: auto;
 }
 
