@@ -2,6 +2,10 @@
 
 {% block content %}
 	<h2>Modules</h2>
+	{% apply markdown_to_html %}
+    Une liste de modules additionnels facilitant la vie du developpeur.   
+    Choisissez l'architecture qui vous convient le mieux.
+	{% endapply %}
     {% for addon in addons %}
         <div class="addon u-margin--bottom">
             <div class="addon-head">
