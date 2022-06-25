@@ -1,14 +1,50 @@
 {% extends "base.html.twig" %}
 
 {% block content %}
-  <h2>A propos</h2>
+  <h2>Présentation</h2>
+  <img class="u-img-block u-margin--bottom" src="/images/home.png"/>
 	{% apply markdown_to_html %}
-    GWE est un moteur de jeux vidéo orienté **trois-dimensions** basé sur les **technologies du web**.    
+    GWE est un moteur de jeux vidéo orienté **trois-dimensions** basé sur les **technologies du web**.
     Il s'agit d'un moteur minimaliste conçu pour créer des projets de **Demake Playstation 1**,
     ou bien de jeux **Neo-PS1** (jeux modernes, mais utilisant les graphismes de la Playstation 1).    
-
-    Pas besoin d'apprendre un nouveau langage, si vous maîtrisez **HTML/JS/CSS** alors ce moteur est fait pour vous.    
-    De plus, grâce à ses **projets de démarrage** vous pouvez commencer à développer un jeu vidéo avec un minimum d'efforts et gagner un temps précieux.
 	{% endapply %}
-  <img class="u-img-block" src="/images/home.png"/>
+ 
+	<h2>Commencer</h2>
+	{% apply markdown_to_html %}
+    Pour commencer un nouveau projet deux solutions s'offre à vous.   
+    Vous pouvez télécharger le boilerplate [ici](https://github.com/ra1jin/gwe-template-boilerplate) ou créer votre projet
+    de zéro en suivant les étapes suivantes.
+
+    <figure class="u-margin--bottom">
+      <img src="/images/code_term.png" alt="Trulli" style="width:100%">
+      <figcaption>Initialiser votre projet Node.js</figcaption>
+    </figure>
+
+    <figure class="u-margin--bottom">
+      <img src="/images/code_folders.png" alt="Trulli" style="width:100%">
+      <figcaption>Créer l'arborescence ci-dessus</figcaption>
+    </figure>
+
+    <figure class="u-margin--bottom">
+      <img src="/images/code_main.png" alt="Trulli" style="width:100%">
+      <figcaption>Contenu du fichier main.js (point d'entré electron)</figcaption>
+    </figure>
+
+    <figure class="u-margin--bottom">
+      <img src="/images/code_index.png" alt="Trulli" style="width:100%">
+      <figcaption>Contenu du fichier index.html</figcaption>
+    </figure>
+
+    <figure class="u-margin--bottom">
+      <img src="/images/code_app.png" alt="Trulli" style="width:100%">
+      <figcaption>Contenu du fichier app.js</figcaption>
+    </figure>
+
+    <figure class="u-margin--bottom">
+      <img src="/images/code_main_screen.png" alt="Trulli" style="width:100%">
+      <figcaption>Contenu du fichier main_screen.js</figcaption>
+    </figure>
+
+    Félicitation, vous avez le minimum requis pour commencer votre projet.
+	{% endapply %}
 {% endblock %}

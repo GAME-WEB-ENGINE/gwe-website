@@ -1,27 +1,18 @@
 {% extends "base.html.twig" %}
 
 {% block content %}
-	<h2>Projets</h2>
-	{% apply markdown_to_html %}
-		L'atout principal de ce moteur est son nombre conséquent de **projets de démarrage**. Chaque projet est basé sur un genre spécifique comme par ex: j-rpg, ccg, board, visual novel, etc... L'intêret est de partir d'une base **solide** et de l'adapter afin de créer votre propre jeu vidéo en un temps record.
-	{% endapply %}
+	<h2>Exemples</h2>
 	<div class="u-row u-row--gutter">
 		{% for project in projects %}
 			<div class="u-col u-width--1of2">
 				<div class="card">
 					<div class="card-header">
 						<img class="card-header-img-top" src="{{ project.thumbnail }}">
-						<span class="badge badge--cat">{{ project.type }}</span>
 					</div>
-					<div class="card-body">
-						<h5 class="card-body-title">{{ project.name }}</h5>
+					<a href="/project/view/{{ project.id }}" class="card-body">
+						<span class="card-body-title">{{ project.name }}</span>
 						<span class="card-body-subtitle u-text-muted">@version {{ project.version }}</span>
-						<div class="card-body-text"> {{ project.description }}
-						</div>
-					</div>
-					<div class="card-footer">
-						<a href="/project/view/{{ project.id }}" class="card-footer-btn">Details</a>
-					</div>
+          </a>
 				</div>
 			</div>
 		{% endfor %}

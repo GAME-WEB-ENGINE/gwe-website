@@ -25,11 +25,11 @@ class MainController extends AbstractController
   }
 
   /**
-   * @Route("/tools", name="tools")
+   * @Route("/downloads", name="downloads")
    */
-  public function tools(): Response
+  public function downloads(): Response
   {
-    return $this->render('tools.html.twig');
+    return $this->render('downloads.html.twig');
   }
 
   /**

@@ -23,12 +23,6 @@ class Project
     private $banner_alt;
 
     #[ORM\Column(type: 'string', length: 255)]
-    private $price;
-
-    #[ORM\Column(type: 'string', length: 255)]
-    private $status;
-
-    #[ORM\Column(type: 'string', length: 255)]
     private $version;
 
     #[ORM\Column(type: 'string', length: 255)]
@@ -55,9 +49,6 @@ class Project
     #[ORM\Column(type: 'text')]
     private $md;
 
-    #[ORM\Column(type: 'boolean')]
-    private $disabled;
-
     #[ORM\Column(type: 'string', length: 255)]
     private $thumbnail;
 
@@ -66,6 +57,9 @@ class Project
 
     #[ORM\Column(type: 'string', length: 255)]
     private $type;
+
+    #[ORM\Column(type: 'string', length: 255)]
+    private $link;
 
     public function getId(): ?int
     {
@@ -104,30 +98,6 @@ class Project
     public function setBannerAlt(string $banner_alt): self
     {
         $this->banner_alt = $banner_alt;
-
-        return $this;
-    }
-
-    public function getPrice(): ?string
-    {
-        return $this->price;
-    }
-
-    public function setPrice(string $price): self
-    {
-        $this->price = $price;
-
-        return $this;
-    }
-
-    public function getStatus(): ?string
-    {
-        return $this->status;
-    }
-
-    public function setStatus(string $status): self
-    {
-        $this->status = $status;
 
         return $this;
     }
@@ -240,18 +210,6 @@ class Project
         return $this;
     }
 
-    public function isDisabled(): ?bool
-    {
-        return $this->disabled;
-    }
-
-    public function setDisabled(bool $disabled): self
-    {
-        $this->disabled = $disabled;
-
-        return $this;
-    }
-
     public function getThumbnail(): ?string
     {
         return $this->thumbnail;
@@ -284,6 +242,18 @@ class Project
     public function setType(string $type): self
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    public function getLink(): ?string
+    {
+        return $this->link;
+    }
+
+    public function setLink(string $link): self
+    {
+        $this->link = $link;
 
         return $this;
     }

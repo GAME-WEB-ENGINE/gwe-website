@@ -109,9 +109,9 @@ a img {
   user-select: none !important;
 }
 
-.button--buy,
-.button--buy:hover,
-.button--buy:active {
+.button--download,
+.button--download:hover,
+.button--download:active {
   background-color: #f6cf06;
   color: #312901;
   text-shadow: 0 1px 0px transparent;
@@ -155,11 +155,17 @@ a img {
   padding: 0.5rem;
 }
 
+.card-body:hover {
+  text-decoration: none;
+  background-color: #e7e7e7;
+}
+
 .card-body-title {
+  display: block;
+  font-weight: bold;
   margin: 0;
   font-size: 1.2rem;
   line-height: 1.2;
-  color: #000;
 }
 
 .card-body-subtitle {
@@ -470,24 +476,28 @@ a img {
 }
 
 /**********************/
-/** ADDON **********/
+/** DOWNLOAD **********/
 /**********************/
 
-.addon {
+.download {
   background-color: #f4f4f4;
 }
-.addon-head {
+.download-head {
   display: flex;
   justify-content: space-between;
   background-color: #cccccc;
   padding: 5px 15px;
 }
-.addon-head-name {
+.download-head-name {
   font-weight: bold;
 }
-.addon-head-version {
+.download-head-version {
   font-style:italic;
 }
-.addon-body {
+.download-body {
   padding: 5px 15px;
+}
+.download-body-link {
+  display: flex;
+  justify-content: end;
 }

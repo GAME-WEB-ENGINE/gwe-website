@@ -24,14 +24,12 @@
     <div class="u-fx">
       <div class="menu">
         <ul>
-          <li><a href="/" class="{{ app.request.get('_route') == 'home' ? 'active' }}">A propos</a></li>
-          <li><a href="/documentation/Application.html" class="{{ app.request.get('_route') == 'documentation' ? 'active' }}">Documentation</a></li>
-          <li><a href="/getting-started" class="{{ app.request.get('_route') == 'getting-started' ? 'active' }}">Commencer</a></li>
-          <li><a href="/project/list" class="{{ app.request.get('_route') matches '{^project}' ? 'active' }}">Projets</a></li>
-          <li><a href="/addon/list" class="{{ app.request.get('_route') == 'addon-list' ? 'active' }}">Modules</a></li>
-          <li><a href="/tools" class="{{ app.request.get('_route') == 'tools' ? 'active' }}">Outils</a></li>
-          <li><a href="https://github.com/ra1jin/gwe">Github</a></li>
-          <li><a href="mailto:julien.rog24@gmail.com">Email Raijin</a></li>
+          <li><a href="/" class="{{ app.request.get('_route') == 'home' ? 'active' }}">Accueil</a></li>
+          <li><a href="/downloads" class="{{ app.request.get('_route') == 'downloads' ? 'active' }}">Téléchargements</a></li>
+          <li><a href="/project/list" class="{{ app.request.get('_route') matches '{^project}' ? 'active' }}">Exemples</a></li>
+          {# <li><a href="/documentation/Application.html" class="{{ app.request.get('_route') == 'documentation' ? 'active' }}">Documentation</a></li> #}
+          <li><a href="https://github.com/GAME-WEB-ENGINE">Github</a></li>
+          <li><a href="mailto:julien.rog24@gmail.com">Email</a></li>
         </ul>
         <div class="announce">
           {% apply markdown_to_html %}

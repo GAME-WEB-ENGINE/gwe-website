@@ -19,16 +19,7 @@
 				</div>
 				<div class="module-content">
 					<div class="buy">
-						<a href="#" class="button button--buy {{ project.disabled ? 'button--disabled' }}">
-							{{ project.disabled ? 'Indisponible' : 'Itch.io' }}
-						</a>
-						{% if project.disabled == false %}
-							<span class="buy-message">
-								<span class="buy-money">{{ project.price }}
-									EUR</span>
-								<span class="buy-sub">ou plus</span>
-							</span>
-						{% endif %}
+						<a href="{{ project.link }} " class="button button--download">Dernière version</a>
 					</div>
 				</div>
 			</div>
@@ -39,10 +30,6 @@
 				<div class="module-content">
 					<div class="stats">
 						<ul>
-							<li>
-								<span>Statut</span>
-								<strong>{{ project.status }}</strong>
-							</li>
 							<li>
 								<span>Version</span>
 								<strong>{{ project.version }}</strong>
