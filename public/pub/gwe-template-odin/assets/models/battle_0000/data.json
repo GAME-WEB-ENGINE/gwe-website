@@ -1,0 +1,9 @@
+{
+  "BackgroundImage": "assets/textures/battle_background.png",
+  "Enemies": [
+    {
+      "EnemyId": "enemy_0000",
+      "Position": [25, 90, 0]
+    }
+  ]
+}

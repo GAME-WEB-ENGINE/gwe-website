@@ -1,0 +1,18 @@
+{
+	"ImageFile": "assets/models/enemy_0000/sprite.png",
+	"Animations": [
+		{
+			"Name": "IDLE",
+			"Frames": [
+				{
+					"Name": "0000.png",
+					"X": 0,
+					"Y": 0,
+					"Width": 150,
+					"Height": 168
+				}
+			],
+			"FrameDuration": 30
+		}
+	]
+}

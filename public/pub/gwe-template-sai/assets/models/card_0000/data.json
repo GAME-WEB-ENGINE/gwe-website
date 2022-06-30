@@ -1,0 +1,30 @@
+{
+  "Id": "card_0000",
+  "Type": "SPELL",
+  "Name": "Benediction des mages",
+  "Text": "Ciblez un monstre de type magicien sur votre terrain; Il gagne 500 ATK.",
+  "CoverFile": "assets/models/card_0000/cover.png",
+  "Attributes": {
+    "ELEMENT": "LIGHT"
+  },
+  "Mode": "ACTIVATE",
+  "Nature": "NORMAL",
+  "Effects": [
+    {
+      "TargetType": "SINGLE",
+      "TargetRange": [["MZONE"], 0],
+      "TargetConditionId": "IS_RACE",
+      "TargetConditionOpts": { "race": "SPELLCASTER" },
+      "MechanicId": "ADD_CARD_MODIFIER",
+      "MechanicOpts": {
+        "modifierData": {
+          "Type": "ADD",
+          "AttributeKey": "ATK",
+          "Value": 500,
+          "Stackable": false,
+          "Linked": false
+        }
+      }
+    }
+  ]
+}

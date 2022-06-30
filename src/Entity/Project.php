@@ -61,6 +61,9 @@ class Project
     #[ORM\Column(type: 'string', length: 255)]
     private $link;
 
+    #[ORM\Column(type: 'string', length: 255)]
+    private $iframe;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -254,6 +257,18 @@ class Project
     public function setLink(string $link): self
     {
         $this->link = $link;
+
+        return $this;
+    }
+
+    public function getIframe(): ?string
+    {
+        return $this->iframe;
+    }
+
+    public function setIframe(string $iframe): self
+    {
+        $this->iframe = $iframe;
 
         return $this;
     }

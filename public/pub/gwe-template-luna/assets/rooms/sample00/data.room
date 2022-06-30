@@ -1,0 +1,32 @@
+{
+  "Ident": "ROOM",
+  "Id": "Room0000",
+  "ScriptFile": "assets/rooms/sample00/script.jsc",
+  "MusicFile": "assets/rooms/sample00/music.mp3",
+  "MapFile": "assets/rooms/sample00/map.jsm",
+  "MapTextureFile": "assets/rooms/sample00/background.png",
+  "WalkmeshFile": "assets/rooms/sample00/walkmesh.jwm",
+  "Camera": {
+    "MinClipOffsetX": 0,
+    "MinClipOffsetY": 0,
+    "MaxClipOffsetX": 0,
+    "MaxClipOffsetY": 0
+  },
+  "Controller": {
+    "JASFile": "assets/models/kid/body.jas",
+    "TextureFile": "assets/models/kid/sprite.png",
+    "OffsetX": 8,
+    "OffsetY": 0,
+    "Radius": 0.2
+  },
+  "Spawns": [{
+    "Name": "Spawn0000",
+    "PositionX": 2.08,
+    "PositionY": 0,
+    "PositionZ": 1.75,
+    "Direction": "LEFT"
+  }],
+  "Models": [],
+  "Movers": [],
+  "Triggers": []
+}

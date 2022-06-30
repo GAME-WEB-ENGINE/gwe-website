@@ -1,0 +1,8 @@
+let DIRECTION = {
+  LEFT: 'LEFT',
+  RIGHT: 'RIGHT',
+  FORWARD: 'FORWARD',
+  BACKWARD: 'BACKWARD'
+};
+
+module.exports.DIRECTION = DIRECTION;

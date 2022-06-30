@@ -1,0 +1,31 @@
+{
+  "name": "gwe",
+  "version": "1.1.7",
+  "description": "Moteur multimédia 2D/3D philosophiquement simple et léger !",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ra1jin/gwe.git"
+  },
+  "keywords": [
+    "game engine",
+    "game",
+    "engine",
+    "3d",
+    "2d",
+    "webgl",
+    "graphics",
+    "graphics engine",
+    "web game engine",
+    "web"
+  ],
+  "author": "raijin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ra1jin/gwe/issues"
+  },
+  "homepage": "https://github.com/ra1jin/gwe#readme"
+}

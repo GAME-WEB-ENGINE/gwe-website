@@ -1,0 +1,347 @@
+/*#############################################################################################*/
+/* CORE OVERRIDES
+/*#############################################################################################*/
+
+@font-face {
+  font-family: "Press Start 2P";
+  font-style: normal;
+  font-weight: 400;
+  src: url(../Fonts/PressStart2PRegular.otf) format("truetype");
+}
+
+* {
+  font-family: "Press Start 2P";
+}
+
+html {
+  overflow: hidden;
+  background-color: rgb(143, 143, 143);
+}
+
+a, a:hover {
+  text-decoration: none;
+}
+
+button {
+  background: none;
+  border: 0;
+  color: #fff;
+  line-height: 1.5;
+}
+
+::-webkit-scrollbar {
+  width: 20px;
+}
+
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 8px blue;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: white;
+  border: 3px solid blue;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b30000;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  margin: 18px 0;
+  width: 100%;
+}
+
+input[type=range]:focus {
+  outline: none;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  cursor: pointer;
+  background: #3071a9;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  border: 1px solid #000000;
+  height: 24px;
+  width: 16px;
+  background: #ffffff;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -8px;
+}
+
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #367ebd;
+}
+
+/*#############################################################################################*/
+/* WIDGETS
+/*#############################################################################################*/
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI INPUT RANGE WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIInputRangeWidget {
+  display: flex;
+  align-items: center;
+}
+.UIInputRangeWidget-prevIcon {
+  display: block;
+}
+.UIInputRangeWidget-value {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+.UIInputRangeWidget-nextIcon {
+  display: block;
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI INPUT SELECT MULTIPLE WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIInputSelectMultipleWidget {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.UIInputSelectMultipleWidget.focused .UIInputSelectMultipleItemWidget.focused {
+  color: rgb(98, 211, 255);
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI INPUT SELECT MULTIPLE ITEM WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIInputSelectMultipleItemWidget {
+  display: flex;
+}
+.UIInputSelectMultipleItemWidget-text {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px;
+}
+.UIInputSelectMultipleItemWidget.selected {
+  background-color: rgb(98, 255, 106);
+}
+.UIInputSelectMultipleItemWidget.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI INPUT SELECT WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIInputSelectWidget {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.UIInputSelectWidget.focused .UIInputSelectItemWidget.focused {
+  color: rgb(98, 211, 255);
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI INPUT SELECT ITEM WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIInputSelectItemWidget {
+  display: flex;
+}
+.UIInputSelectItemWidget-text {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px;
+}
+.UIInputSelectItemWidget.selected {
+  background-color: rgb(98, 255, 106);
+}
+.UIInputSelectItemWidget.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI INPUT SLIDER WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIInputSliderWidget {
+  display: flex;
+  align-items: center;
+}
+.UIInputSliderWidget-range {
+  display: block;
+}
+.UIInputSliderWidget-value {
+  margin-left: 16px;
+  min-width: 64px;
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI INPUT TEXT WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIInputTextWidget {
+
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI KEYBOARD WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIKeyboardWidget {
+  padding-top: 10px;
+  border: 10px solid;
+  border-image: url(../textures/ui_border.png) 3 fill;
+}
+.UIKeyboardWidget-value {
+  background-color: blue;
+  padding: 0 8px;
+  height: 32px;
+  line-height: 32px;
+  margin-bottom: 16px;
+}
+.UIKeyboardWidget-row {
+  display: flex;
+  flex-direction: row;
+}
+.UIKeyboardWidget-row-item {
+  position: relative;
+  flex: 1;
+  padding: 8px;
+}
+.UIKeyboardWidget.focused .UIKeyboardWidget-row-item.focused {
+  background-color: rgb(98, 211, 255);
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI LIST_WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIListWidget {
+  display: flex;
+  flex-direction: column;
+  border: 10px solid;
+  border-image: url(../textures/ui_border.png) 3 fill;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+.UIListWidget-item {
+  display: flex;
+  justify-content: space-between;
+  line-height: 32px;
+}
+.UIListWidget-item-label {
+  color: #ccccff;
+}
+.UIListWidget-item-value {
+  color: #fff;
+  margin-left: 15px;
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI MENU WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIMenuWidget {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  border: 10px solid;
+  border-image: url(../textures/ui_border.png) 3 fill;
+}
+.UIMenuWidget--x {
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+.UIMenuWidget--y {
+  flex-direction: column;
+}
+.UIMenuWidget.focused .UIMenuItemWidget.focused {
+  background-color: rgb(98, 211, 255);
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI MENU ITEM WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIMenuItemWidget {
+  display: flex;
+}
+.UIMenuItemWidget-text {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px;
+}
+.UIMenuItemWidget.selected {
+  background-color: rgb(98, 255, 106);
+}
+.UIMenuItemWidget.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI PROMPT WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UIPromptWidget {
+  padding-top: 10px;
+  padding-right: 10px;
+  padding-left: 10px;
+  border: 10px solid;
+  border-image: url(../textures/ui_border.png) 3 fill;
+}
+.UIPromptWidget-text {
+  display: block;
+  line-height: 24px;
+  margin-bottom: 16px;
+  white-space: pre;
+  text-align: center;
+}
+.UIPromptWidget .UIMenuWidget {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  border:0;
+  border-image: none;
+}
+
+/*---------------------------------------------------------------------------------------------*/
+/* UI SPRITE WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.UISpriteWidget {
+  background-repeat: no-repeat;
+  background-position: 0px 0px;
+}
+
+
+
+
+
+
+
+/*---------------------------------------------------------------------------------------------*/
+/* MENU 2D WIDGET
+/*---------------------------------------------------------------------------------------------*/
+.Menu2DWidget {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  border: 10px solid;
+  border-image: url(../Textures/UIBorder.png) 3 fill;
+}
+.Menu2DWidget-item {
+  position: relative;
+  padding: 8px;
+  min-width: 50%;
+  max-width: 50%;
+  height: 30px;
+}
+.Menu2DWidget-item--disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+.Menu2DWidget.focused .Menu2DWidget-item--focused {
+  background-color: rgb(98, 211, 255);
+}
+.Menu2DWidget-item--selected {
+  background-color: rgb(98, 255, 106);
+}

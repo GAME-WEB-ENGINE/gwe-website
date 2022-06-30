@@ -1,0 +1,48 @@
+{
+  "Id": "duelist_0001",
+  "Name": "Yuri",
+  "PictureFile": "assets/models/duelist_0001/picture.png",
+  "Deck": [
+    {
+      "CardTypeName": "MonsterCard",
+      "CardId": "card_0001"
+    },
+    {
+      "CardTypeName": "MonsterCard",
+      "CardId": "card_0001"
+    },
+    {
+      "CardTypeName": "SpellCard",
+      "CardId": "card_0000"
+    },
+    {
+      "CardTypeName": "SpellCard",
+      "CardId": "card_0000"
+    },
+    {
+      "CardTypeName": "SpellCard",
+      "CardId": "card_0000"
+    },
+    {
+      "CardTypeName": "SpellCard",
+      "CardId": "card_0000"
+    },
+    {
+      "CardTypeName": "SpellCard",
+      "CardId": "card_0000"
+    },
+    {
+      "CardTypeName": "MonsterCard",
+      "CardId": "card_0001"
+    }
+  ],
+  "Attributes": {
+    "LIFEPOINTS": 4000,
+    "DRAW_COUNT": 0,
+    "DRAW_COUNT_LIMIT": 1,
+    "SUMMON_COUNT": 0,
+    "SUMMON_COUNT_LIMIT": 1,
+    "STATE_CANNOT_SET": 0,
+    "STATE_CANNOT_SUMMON": 0
+  }
+}

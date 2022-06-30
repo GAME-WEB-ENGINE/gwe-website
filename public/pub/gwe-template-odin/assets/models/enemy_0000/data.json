@@ -1,0 +1,44 @@
+{
+  "Id": "enemy_0000",
+  "Type": "ENEMY",
+  "Name": "Harpie Lv.1",
+  "Description": "Harpie",
+  "PictureFile": "assets/models/enemy_0000/picture.png",
+  "SpriteFile": "assets/models/enemy_0000/sprite.json",
+  "Attributes": {
+    "LV": 1,
+    "LV_MAX": 99,
+    "XP": 30,
+    "XP_MAX": 99,
+    "HP": 30,
+    "HP_MAX": 100,
+    "MP": 50,
+    "MP_MAX": 50,
+    "ATK": 10,
+    "DEF": 10,
+    "MAGIC_ATK": 10,
+    "MAGIC_DEF": 10,
+    "AGILITY": 3,
+    "ELEMENT": "RED"
+  },
+  "AttackEffectIds": [],
+  "MagicEffectIds": [
+    "effect_0000",
+    "effect_0000",
+    "effect_0000"
+  ],
+  "Gils": 0,
+  "Patterns": [
+    {
+      "Name": "000",
+      "EffectId": "effect_0000",
+      "Priority": 0,
+      "ConditionId": "SELF_HAS_LOWER_HP",
+      "ConditionOpts": {
+        "number": 0.5
+      },
+      "TargetSortId": "LOWEST_HP",
+      "TargetSortOpts": {}
+    }
+  ]
+}

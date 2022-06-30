@@ -1,0 +1,32 @@
+{
+  "Id": "card_0003",
+  "Type": "SPELL",
+  "Name": "Tourmenteur",
+  "Text": "Tant que cette carte est sur le terrain; Tous les monstres sur le terrain adverse perdent 300 DEF.",
+  "CoverFile": "assets/models/card_0003/cover.png",
+  "Attributes": {
+    "ELEMENT": "DARK"
+  },
+  "Mode": "ACTIVATE",
+  "Nature": "CONTINUOUS",
+  "ReleaseConditionId": "IS_ENDLESS",
+  "ReleaseConditionOpts": {},
+  "Effects": [
+    {
+      "TargetType": "FIELD",
+      "TargetRange": [["MZONE"], 0],
+      "TargetConditionId": "IS_TYPE",
+      "TargetConditionOpts": { "race": "MONSTER" },
+      "MechanicId": "ADD_CARD_MODIFIER",
+      "MechanicOpts": {
+        "modifierData": {
+          "Type": "SUB",
+          "AttributeKey": "DEF",
+          "Value": "300",
+          "Stackable": false,
+          "Linked": true
+        }
+      }
+    }
+  ]
+}
