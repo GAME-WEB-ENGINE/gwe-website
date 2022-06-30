@@ -6,7 +6,7 @@
   font-family: "Press Start 2P";
   font-style: normal;
   font-weight: 400;
-  src: url(../Fonts/PressStart2PRegular.otf) format("truetype");
+  src: url(../fonts/PressStart2PRegular.otf) format("truetype");
 }
 
 * {
