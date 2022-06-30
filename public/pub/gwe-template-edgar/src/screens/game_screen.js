@@ -148,9 +148,10 @@ class GameScreen extends GWE.Screen {
     let uiAvatar = new UIAvatar();
     uiAvatar.changeLocation(location);
     await uiAvatar.loadFromFile(spriteFile);
+    uiAvatar.animate(animate);
     uiAvatar.play(animation, isLooped);
     GWE.uiManager.addWidget(uiAvatar);
-    uiAvatar.animate(animate);
+    
     await GWE.eventManager.wait(uiAvatar, 'E_ANIMATION_FINISHED');
     this.scriptMachine.setEnabled(true);
   }
@@ -159,9 +160,10 @@ class GameScreen extends GWE.Screen {
     this.scriptMachine.setEnabled(false);
     let uiBackground = new UIBackground();
     await uiBackground.loadFromFile(spriteFile);
+    uiBackground.animate(animate);
     uiBackground.play(animation, isLooped);
     GWE.uiManager.addWidget(uiBackground);
-    uiBackground.animate(animate);
+    
     await GWE.eventManager.wait(uiBackground, 'E_ANIMATION_FINISHED');
     this.scriptMachine.setEnabled(true);
   }
