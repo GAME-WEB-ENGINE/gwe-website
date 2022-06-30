@@ -20,6 +20,7 @@
   display: block;
   position: absolute;
   z-index: 11;
+  opacity:0;
 }
 .UIAvatar.u-middle {
   left: 50%;
