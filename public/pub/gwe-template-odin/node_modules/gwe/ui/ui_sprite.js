@@ -104,7 +104,7 @@ class UISprite extends UIWidget {
     let request = new XMLHttpRequest();
     request.open('GET', path, false);
     request.send(null);
-    this.loadFromData(JSON.parse(this.responseText));
+    this.loadFromData(JSON.parse(request.responseText));
   }
 
   play(animationName, isLooped = false, preventSameAnimation = false) {
