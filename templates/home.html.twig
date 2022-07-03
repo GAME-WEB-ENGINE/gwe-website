@@ -2,34 +2,10 @@
 
 {% block content %}
   <h2>Présentation</h2>
-  <img class="u-img-block u-margin--bottom" src="/images/home.png"/>
 	{% apply markdown_to_html %}
     GWE est un moteur de jeux vidéo orienté **trois-dimensions** basé sur les **technologies du web**.
     Il s'agit d'un moteur minimaliste conçu pour créer des projets de **Demake Playstation 1**,
     ou bien de jeux **Neo-PS1** (jeux modernes, mais utilisant les graphismes de la Playstation 1).    
-	{% endapply %}
- 
-	<h2>Commencer</h2>
-	{% apply markdown_to_html %}
-    Pour commencer un nouveau projet deux solutions s'offre à vous.   
-    Vous pouvez télécharger le boilerplate [ici](https://github.com/ra1jin/gwe-template-boilerplate) ou créer votre projet
-    de zéro en suivant les étapes ci-dessous.
-
-    <figure class="u-margin--bottom">
-      <img src="/images/code_index.png" alt="Trulli" style="width:100%">
-      <figcaption>Contenu du fichier index.html</figcaption>
-    </figure>
-
-    <figure class="u-margin--bottom">
-      <img src="/images/code_app.png" alt="Trulli" style="width:100%">
-      <figcaption>Contenu du fichier app.js</figcaption>
-    </figure>
-
-    <figure class="u-margin--bottom">
-      <img src="/images/code_main_screen.png" alt="Trulli" style="width:100%">
-      <figcaption>Contenu du fichier main_screen.js</figcaption>
-    </figure>
-
-    Félicitation, vous avez le minimum requis pour commencer votre projet.
+    Pour commencer un nouveau projet vous pouvez télécharger le boilerplate [ici](https://github.com/ra1jin/gwe-template-boilerplate) !
 	{% endapply %}
 {% endblock %}
