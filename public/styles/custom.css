@@ -102,7 +102,7 @@ q q::after {
 }
 
 blockquote {
-  quotes: "“""”";
+  quotes: "“" "”";
 }
 
 blockquote p {
