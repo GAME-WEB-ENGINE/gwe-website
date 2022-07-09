@@ -2,9 +2,6 @@
 
 {% block content %}
 <h2>{{ project.name }}</h2>
-<center>
-  <img class="project-banner" src="{{ project.banner }}" alt="{{ project.bannerAlt }}"/>
-</center>
 <div class="u-row u-row--gutter">
   <div class="u-col u-width--8of12">
     {% apply markdown_to_html %}{{ project.md }}{% endapply %}
