@@ -1,5 +1,5 @@
 let { GWE } = require('gwe');
-let { DIRECTION } = require('../core/enums');
+let { DIRECTION } = require('../enums');
 
 class Spawn extends GWE.Gfx3Drawable {
   constructor() {

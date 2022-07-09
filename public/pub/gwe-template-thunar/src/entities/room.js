@@ -84,48 +84,16 @@ class Room {
     await this.scriptMachine.loadFromFile(json['ScriptFile']);
     this.scriptMachine.jump('ON_INIT');
     this.scriptMachine.setEnabled(true);
+
+    GWE.eventManager.subscribe(this.controller, 'E_ACTION_PUSHED', this, this.handleControllerActionPushed);
+    GWE.eventManager.subscribe(this.controller, 'E_MOVED', this, this.handleControllerActionMoved);
   }
 
   handleKeyDownOnce(e) {
-    if (!this.running) {
-      return;
-    }
-
-    if (e.key == 'Enter') {
-      this.operationControllerAction();
-    }
+    this.controller.handleKeyDownOnce(e);
   }
 
   update(ts) {
-    if (this.running) {
-      let moveDir = GWE.Utils.VEC3_ZERO;
-      if (GWE.inputManager.isKeyDown('ArrowLeft')) {
-        moveDir = GWE.Utils.VEC3_LEFT;
-        this.controller.setMoving(true);
-      }
-      else if (GWE.inputManager.isKeyDown('ArrowRight')) {
-        moveDir = GWE.Utils.VEC3_RIGHT;
-        this.controller.setMoving(true);
-      }
-      else if (GWE.inputManager.isKeyDown('ArrowUp')) {
-        moveDir = GWE.Utils.VEC3_FORWARD;
-        this.controller.setMoving(true);
-      }
-      else if (GWE.inputManager.isKeyDown('ArrowDown')) {
-        moveDir = GWE.Utils.VEC3_BACKWARD;
-        this.controller.setMoving(true);
-      }
-      else {
-        this.controller.setMoving(false);
-      }
-  
-      if (this.controller.isMoving()) {
-        let mx = moveDir[0] * this.controller.getSpeed() * (ts / 1000);
-        let mz = moveDir[2] * this.controller.getSpeed() * (ts / 1000);
-        this.operationControllerMove(mx, mz);
-      }
-    }
- 
     this.map.update(ts);
     this.walkmesh.update(ts);
     this.controller.update(ts);
@@ -171,9 +139,10 @@ class Room {
     }
   }
 
-  operationControllerAction() {
+  handleControllerActionPushed({ handPositionX, handPositionY, handPositionZ }) {
     let position = this.controller.getPosition();
     let radius = this.controller.getRadius();
+
     for (let trigger of this.triggers) {
       if (GWE.Utils.VEC3_DISTANCE(trigger.getPosition(), position) <= radius + trigger.getRadius()) {
         if (trigger.getOnActionBlockId()) {
@@ -183,9 +152,8 @@ class Room {
       }
     }
 
-    let handPosition = this.controller.getHandPosition();
     for (let model of this.models) {
-      if (GWE.Utils.VEC3_DISTANCE(model.getPosition(), handPosition) <= model.getRadius()) {
+      if (GWE.Utils.VEC3_DISTANCE(model.getPosition(), [handPositionX, handPositionY, handPositionZ]) <= model.getRadius()) {
         if (model.getOnActionBlockId()) {
           this.scriptMachine.jump(model.getOnActionBlockId());
           return;
@@ -194,41 +162,37 @@ class Room {
     }
   }
 
-  //
-  // @todo(me): ajouter glissement sur les bords de la map.
-  //
-  operationControllerMove(mx, mz) {
+  handleControllerActionMoved({ prevPositionX, prevPositionZ }) {
+    let position = this.controller.getPosition();
     let radius = this.controller.getRadius();
-    let nextPosition = GWE.Utils.VEC3_ADD(this.controller.getPosition(), [mx, 0, mz]);
 
     for (let other of this.models) {
-      let delta = GWE.Utils.VEC3_SUBSTRACT(nextPosition, other.getPosition());
+      let delta = GWE.Utils.VEC3_SUBSTRACT(position, other.getPosition());
       let distance = GWE.Utils.VEC3_LENGTH(delta);
       let distanceMin = radius + other.getRadius();
 
       if (distance < distanceMin) {
         let c = Math.PI * 2 - (Math.PI * 2 - Math.atan2(delta[2], delta[0]));
-        nextPosition[0] += Math.cos(c) * (distanceMin - distance);
-        nextPosition[2] += Math.sin(c) * (distanceMin - distance);
+        position[0] += Math.cos(c) * (distanceMin - distance);
+        position[2] += Math.sin(c) * (distanceMin - distance);
         break;
       }
     }
 
-    this.controller.setRotation(0, GWE.Utils.VEC2_ANGLE([mx, mz]), 0);
-
-    let p0Elevation = this.walkmesh.getElevationAt(nextPosition[0], nextPosition[2]);
-    let p1Elevation = this.walkmesh.getElevationAt(nextPosition[0] - radius, nextPosition[2] - radius);
-    let p2Elevation = this.walkmesh.getElevationAt(nextPosition[0] - radius, nextPosition[2] + radius);
-    let p3Elevation = this.walkmesh.getElevationAt(nextPosition[0] + radius, nextPosition[2] - radius);
-    let p4Elevation = this.walkmesh.getElevationAt(nextPosition[0] + radius, nextPosition[2] + radius);
+    let p0Elevation = this.walkmesh.getElevationAt(position[0], position[2]);
+    let p1Elevation = this.walkmesh.getElevationAt(position[0] - radius, position[2] - radius);
+    let p2Elevation = this.walkmesh.getElevationAt(position[0] - radius, position[2] + radius);
+    let p3Elevation = this.walkmesh.getElevationAt(position[0] + radius, position[2] - radius);
+    let p4Elevation = this.walkmesh.getElevationAt(position[0] + radius, position[2] + radius);
     if (p0Elevation == Infinity || p1Elevation == Infinity || p2Elevation == Infinity || p3Elevation == Infinity || p4Elevation == Infinity) {
+      this.controller.setPosition(prevPositionX, position[1], prevPositionZ);
       return;
     }
 
-    this.controller.setPosition(nextPosition[0], p0Elevation, nextPosition[2]);
-    
+    this.controller.setPosition(position[0], p0Elevation, position[2]);
+
     for (let trigger of this.triggers) {
-      let distance = GWE.Utils.VEC3_DISTANCE(trigger.getPosition(), [nextPosition[0], 0, nextPosition[2]]);
+      let distance = GWE.Utils.VEC3_DISTANCE(trigger.getPosition(), position);
       let distanceMin = radius + trigger.getRadius();
 
       if (trigger.getOnEnterBlockId() && !trigger.isHovered() && distance < distanceMin) {
@@ -243,17 +207,17 @@ class Room {
   }
 
   async $loadRoom(path, spawnName) {
-    this.running = false;
+    this.controller.setControllable(false);
     await this.loadFromFile(path, spawnName);
-    this.running = true;
+    this.controller.setControllable(true);
   }
 
   $continue() {
-    this.running = true;
+    this.controller.setControllable(true);
   }
 
   $stop() {
-    this.running = false;
+    this.controller.setControllable(false);
   }
 
   async $uiCreateDialog(author, text) {

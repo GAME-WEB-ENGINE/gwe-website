@@ -3,13 +3,13 @@
 /**********************/
 
 html {
-  font-size:14px;
+  font-size: 14px;
 }
 
 body {
   font-weight: 300;
   background: #e7e7e7cc;
-  font-family: Verdana,Tahoma,Arial,sans-serif;
+  font-family: Verdana, Tahoma, Arial, sans-serif;
 
 }
 
@@ -57,8 +57,88 @@ a img {
 
 p {
   font-size: 1rem;
-  margin:0;
-  margin-bottom:1rem;
+  margin: 0;
+  margin-bottom: 1rem;
+}
+
+:lang(fr)>q {
+  quotes: "\00AB""\00BB""\201C""\201D";
+}
+
+:lang(de)>q {
+  quotes: "\201E""\201C""\2018""\2019";
+}
+
+:lang(de)>q {
+  quotes: "\00BB""\00AB""\203A""\2039";
+}
+
+:lang(ja)>q {
+  quotes: "\300C""\300D""\300E""\300F";
+}
+
+q {
+  quotes: "“""”""‘""’";
+}
+
+q::before {
+  content: "\201C";
+  content: open-quote;
+}
+
+q::after {
+  content: "\201D";
+  content: close-quote;
+}
+
+q q::before {
+  content: "\2018";
+  content: open-quote;
+}
+
+q q::after {
+  content: "\2019";
+  content: close-quote;
+}
+
+blockquote {
+  quotes: "“""”";
+}
+
+blockquote p {
+  text-indent: -0.41em;
+}
+
+blockquote p::before {
+  content: "“";
+  content: open-quote;
+}
+
+blockquote p::after {
+  content: "”";
+  content: close-quote;
+}
+
+blockquote p:last-of-type {
+  margin-bottom: 0;
+}
+
+blockquote q::before {
+  content: "\201C";
+  content: open-quote;
+}
+
+blockquote q::after {
+  content: "\201D";
+  content: close-quote;
+}
+
+.quote-src {
+  display: block;
+}
+
+.quote-src:before {
+  content: "\2014";
 }
 
 /**********************/
@@ -340,7 +420,7 @@ p {
 }
 
 .announce p {
-  margin:0;
+  margin: 0;
 }
 
 /**********************/
@@ -452,14 +532,23 @@ p {
 
 .main-content {
   padding-left: 20px;
-  flex:1;
+  flex: 1;
 }
 
 .main-content h2 {
   font-size: 1.2em;
   letter-spacing: 0.5;
   margin: 0;
-  margin-bottom:1rem;
+  margin-bottom: 1rem;
+}
+
+.main-blockquote {
+  margin-left: auto;
+  text-align:right;
+}
+
+.main-blockquote p {
+  font-size: 2rem;
 }
 
 /**********************/
@@ -496,21 +585,26 @@ p {
 .download {
   background-color: #f4f4f4;
 }
+
 .download-head {
   display: flex;
   justify-content: space-between;
   background-color: #cccccc;
   padding: 5px 15px;
 }
+
 .download-head-name {
   font-weight: bold;
 }
+
 .download-head-version {
-  font-style:italic;
+  font-style: italic;
 }
+
 .download-body {
   padding: 5px 15px;
 }
+
 .download-body-link {
   display: flex;
   justify-content: end;

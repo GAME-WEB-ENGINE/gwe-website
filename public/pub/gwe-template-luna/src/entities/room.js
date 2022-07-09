@@ -1,5 +1,4 @@
 let { GWE } = require('gwe');
-let { DIRECTION } = require('../core/enums');
 let { Spawn } = require('./spawn');
 let { Model } = require('./model');
 let { Trigger } = require('./trigger');
@@ -17,11 +16,6 @@ class Room {
     this.models = [];
     this.movers = [];
     this.triggers = [];
-    this.running = true;
-
-    this.scriptMachine.registerCommand('CONTINUE', GWE.Utils.BIND(this.$continue, this));
-    this.scriptMachine.registerCommand('STOP', GWE.Utils.BIND(this.$stop, this));
-    this.scriptMachine.registerCommand('UI_CREATE_DIALOG', GWE.Utils.BIND(this.$uiCreateDialog, this));
   }
 
   async loadFromFile(path, spawnName) {
@@ -74,49 +68,11 @@ class Room {
     this.controller.setDirection(spawn.getDirection());
     this.controller.setPosition(spawn.getPositionX(), spawn.getPositionY(), spawn.getPositionZ());
 
-    await this.scriptMachine.loadFromFile(json['ScriptFile']);
-    this.scriptMachine.jump('ON_INIT');
-    this.scriptMachine.setEnabled(true);
-  }
-
-  handleKeyDownOnce(e) {
-    if (!this.running) {
-      return;
-    }
-
-    if (e.key == 'Enter') {
-      this.operationControllerAction();
-    }
+    GWE.eventManager.subscribe(this.controller, 'E_ACTION_PUSHED', this, this.handleControllerActionPushed);
+    GWE.eventManager.subscribe(this.controller, 'E_MOVED', this, this.handleControllerActionMoved);
   }
 
   update(ts) {
-    if (this.running) {
-      if (GWE.inputManager.isKeyDown('ArrowLeft')) {
-        this.controller.setMoving(true);
-        this.controller.setDirection(DIRECTION.LEFT);
-      }
-      else if (GWE.inputManager.isKeyDown('ArrowRight')) {
-        this.controller.setMoving(true);
-        this.controller.setDirection(DIRECTION.RIGHT);
-      }
-      else if (GWE.inputManager.isKeyDown('ArrowUp')) {
-        this.controller.setMoving(true);
-        this.controller.setDirection(DIRECTION.FORWARD);
-      }
-      else if (GWE.inputManager.isKeyDown('ArrowDown')) {
-        this.controller.setMoving(true);
-        this.controller.setDirection(DIRECTION.BACKWARD);
-      }
-      else {
-        this.controller.setMoving(false);
-      }
-
-      if (this.controller.isMoving()) {
-        let velocity = this.controller.getVelocity();
-        this.operationControllerMove(velocity[0] * (ts / 1000), velocity[2] * (ts / 1000));
-      }
-    }
-
     this.map.update(ts);
     this.walkmesh.update(ts);
     this.controller.update(ts);
@@ -162,9 +118,14 @@ class Room {
     }
   }
 
-  operationControllerAction() {
+  handleKeyDownOnce(e) {
+    this.controller.handleKeyDownOnce(e);
+  }
+
+  handleControllerActionPushed({ handPositionX, handPositionZ }) {
     let position = this.controller.getPosition();
     let radius = this.controller.getRadius();
+
     for (let trigger of this.triggers) {
       if (GWE.Utils.VEC3_DISTANCE(trigger.getPosition(), position) <= radius + trigger.getRadius()) {
         if (trigger.getOnActionBlockId()) {
@@ -174,9 +135,8 @@ class Room {
       }
     }
 
-    let handPosition = this.controller.getHandPosition();
     for (let model of this.models) {
-      if (GWE.Utils.VEC3_DISTANCE(model.getPosition(), handPosition) <= model.getRadius()) {
+      if (GWE.Utils.VEC3_DISTANCE(model.getPosition(), [handPositionX, position[1], handPositionZ]) <= model.getRadius()) {
         if (model.getOnActionBlockId()) {
           this.scriptMachine.jump(model.getOnActionBlockId());
           return;
@@ -185,27 +145,27 @@ class Room {
     }
   }
 
-  operationControllerMove(mx, mz) {
+  handleControllerActionMoved({ prevPositionX, prevPositionZ }) {
+    let position = this.controller.getPosition();
     let radius = this.controller.getRadius();
-    let nextPosition = GWE.Utils.VEC3_ADD(this.controller.getPosition(), [mx, 0, mz]);
 
     for (let other of this.models) {
-      if (GWE.Utils.VEC3_DISTANCE(other.getPosition(), nextPosition) <= radius + other.getRadius()) {
+      if (GWE.Utils.VEC3_DISTANCE(other.getPosition(), position) <= radius + other.getRadius()) {
+        this.controller.setPosition(prevPositionX, position[1], prevPositionZ);
         return;
       }
     }
 
-    let p0Elevation = this.walkmesh.getElevationAt(nextPosition[0], nextPosition[2]);
-    let p1Elevation = this.walkmesh.getElevationAt(nextPosition[0] - radius, nextPosition[2]);
-    let p2Elevation = this.walkmesh.getElevationAt(nextPosition[0] + radius, nextPosition[2]);
+    let p0Elevation = this.walkmesh.getElevationAt(position[0], position[2]);
+    let p1Elevation = this.walkmesh.getElevationAt(position[0] - radius, position[2]);
+    let p2Elevation = this.walkmesh.getElevationAt(position[0] + radius, position[2]);
     if (p0Elevation == Infinity || p1Elevation == Infinity || p2Elevation == Infinity) {
+      this.controller.setPosition(prevPositionX, position[1], prevPositionZ);
       return;
     }
 
-    this.controller.setPosition(nextPosition[0], p0Elevation, nextPosition[2]);
-
     for (let trigger of this.triggers) {
-      let distance = GWE.Utils.VEC3_DISTANCE(trigger.getPosition(), nextPosition);
+      let distance = GWE.Utils.VEC3_DISTANCE(trigger.getPosition(), position);
       let distanceMin = radius + trigger.getRadius();
 
       if (trigger.getOnEnterBlockId() && !trigger.isHovered() && distance < distanceMin) {
@@ -217,26 +177,6 @@ class Room {
         trigger.setHovered(false);
       }
     }
-  }
-
-  $continue() {
-    this.running = true;
-  }
-
-  $stop() {
-    this.running = false;
-  }
-
-  async $uiCreateDialog(author, text) {
-    this.scriptMachine.setEnabled(false);
-    let uiDialog = new GWE.UIDialog();
-    uiDialog.setAuthor(author);
-    uiDialog.setText(text);
-    GWE.uiManager.addWidget(uiDialog);
-    GWE.uiManager.focus(uiDialog);
-    await GWE.eventManager.wait(uiDialog, 'E_CLOSE');
-    GWE.uiManager.removeWidget(uiDialog);
-    this.scriptMachine.setEnabled(true);
   }
 }
 

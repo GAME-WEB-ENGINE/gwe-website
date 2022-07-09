@@ -18,8 +18,8 @@
     "JASFile": "assets/models/kid/body.jas",
     "TextureFile": "assets/models/kid/sprite.png",
     "Radius": 0.2,
-    "Width": 16,
-    "Height": 32
+    "OffsetX": 8,
+    "OffsetY": 16
   },
   "Spawns": [{
     "Name": "Spawn0000",
@@ -35,8 +35,8 @@
     "PositionY":-3.56,
     "PositionZ":-4.00,
     "Radius": 0.3,
-    "Width": 24,
-    "Height": 35,
+    "OffsetX": 12,
+    "OffsetY": 17.5,
     "OnActionBlockId": "0000",
     "Animation": "IDLE_LEFT"
   }],

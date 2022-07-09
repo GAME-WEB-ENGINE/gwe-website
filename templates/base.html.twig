@@ -3,14 +3,12 @@
 
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta name="description" content="GWE alias Game Web Engine is a tree-dimensions game engine pretty simple and fun to used !">
-  <meta name="keywords" content="game engine, game, engine, 3d, 2d, webgl, graphics, graphics engine, web game engine, web">
+  <meta name="description"
+    content="GWE alias Game Web Engine is a tree-dimensions game engine pretty simple and fun to used !">
+  <meta name="keywords"
+    content="game engine, game, engine, 3d, 2d, webgl, graphics, graphics engine, web game engine, web">
   <meta name="author" content="raijin#6313">
 
-  <script src="/scripts/prettify/prettify.js"> </script>
-  <script src="/scripts/prettify/lang-css.js"> </script>
-  <link type="text/css" rel="stylesheet" href="/styles/prettify-tomorrow.css">
-  <link type="text/css" rel="stylesheet" href="/styles/jsdoc-default.css">
   <link rel="stylesheet" type="text/css" href="/styles/core.css" media="screen">
   <link rel="stylesheet" type="text/css" href="/styles/custom.css" media="screen">
   <title>GWE - Game Web Engine</title>
@@ -18,21 +16,33 @@
 
 <body class="main">
   <div class="main-wrap">
-    <img class="main-logo" src="/images/gwe.png" width="150">
+    <div class="u-fx">
+      <img class="main-logo" src="/images/gwe.png" width="150">
+      <blockquote class="main-blockquote u-margin--left-auto">
+        <p>Moteur de jeu 3D WebGL</p>
+        <footer class="quote-src">
+          <cite><a href="#">Léger, multi-plateforme, gratuit et sans dépendance</a></cite>
+        </footer>
+      </blockquote>
+    </div>
+
     <div class="u-fx">
       <div class="menu">
         <ul>
           <li><a href="/" class="{{ app.request.get('_route') == 'home' ? 'active' }}">Accueil</a></li>
-          <li><a href="/downloads" class="{{ app.request.get('_route') == 'downloads' ? 'active' }}">Téléchargements</a></li>
-          <li><a href="/project/list" class="{{ app.request.get('_route') matches '{^project}' ? 'active' }}">Exemples</a></li>
-          {# <li><a href="/documentation/Application.html" class="{{ app.request.get('_route') == 'documentation' ? 'active' }}">Documentation</a></li> #}
+          <li><a href="/downloads" class="{{ app.request.get('_route') == 'downloads' ? 'active' }}">Téléchargements</a>
+          </li>
+          <li><a href="/project/list"
+              class="{{ app.request.get('_route') matches '{^project}' ? 'active' }}">Exemples</a></li>
+          {# <li><a href="/documentation/Application.html"
+              class="{{ app.request.get('_route') == 'documentation' ? 'active' }}">Documentation</a></li> #}
           <li><a href="https://github.com/GAME-WEB-ENGINE">Github</a></li>
           <li><a href="mailto:julien.rog24@gmail.com">Email</a></li>
         </ul>
         <div class="announce">
           {% apply markdown_to_html %}
-            **Travaux en cours:**    
-            Combat tour par tour en trois dimensions.
+          **Travaux en cours:**
+          Combat tour par tour en trois dimensions.
           {% endapply %}
         </div>
       </div>
@@ -45,4 +55,5 @@
     </div>
   </div>
 </body>
+
 </html>

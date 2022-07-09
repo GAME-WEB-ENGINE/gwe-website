@@ -2,6 +2,7 @@
 
 },{}],2:[function(require,module,exports){
 let { screenManager } = require('./screen/screen_manager');
+let { gfx2Manager } = require('./gfx2/gfx2_manager');
 let { gfx3Manager } = require('./gfx3/gfx3_manager');
 let { uiManager } = require('./ui/ui_manager');
 
@@ -18,6 +19,11 @@ let SizeModeEnum = {
   FULL: 3
 };
 
+let RenderingModeEnum = {
+  CANVAS_3D: 0,
+  CANVAS_2D: 1
+};
+
 /**
  * Classe représentant l'application.
  */
@@ -25,13 +31,14 @@ class Application {
   /**
    * Créer une application gwe.
    */
-  constructor(resolutionWidth, resolutionHeight, sizeMode = SizeModeEnum.FIT) {
+  constructor(resolutionWidth, resolutionHeight, sizeMode = SizeModeEnum.FIT, renderingMode = RenderingModeEnum.CANVAS_3D) {
     this.container = null;
     this.timeStep = 0;
     this.timeStamp = 0;
     this.resolutionWidth = resolutionWidth;
     this.resolutionHeight = resolutionHeight;
     this.sizeMode = sizeMode;
+    this.renderingMode = renderingMode;
 
     this.container = document.getElementById('APP');
     if (!this.container) {
@@ -90,13 +97,25 @@ class Application {
     this.timeStep = Math.min(timeStamp - this.timeStamp, 100);
     this.timeStamp = timeStamp;
 
-    gfx3Manager.update(this.timeStep);
+    if (this.renderingMode == RenderingModeEnum.CANVAS_2D) {
+      gfx2Manager.update(this.timeStep);
+    }
+    else if (this.renderingMode == RenderingModeEnum.CANVAS_3D) {
+      gfx3Manager.update(this.timeStep);
+    }
+    
     uiManager.update(this.timeStep);
     screenManager.update(this.timeStep);
 
-    for (let i = 0; i < gfx3Manager.getNumViews(); i++) {
-      gfx3Manager.clear(i);
-      screenManager.draw(i);
+    if (this.renderingMode == RenderingModeEnum.CANVAS_2D) {
+      gfx2Manager.clear();
+      screenManager.draw(0);
+    }
+    else if (this.renderingMode == RenderingModeEnum.CANVAS_3D) {
+      for (let i = 0; i < gfx3Manager.getNumViews(); i++) {
+        gfx3Manager.clear(i);
+        screenManager.draw(i);
+      }
     }
 
     requestAnimationFrame(timeStamp => this.run(timeStamp));
@@ -104,8 +123,9 @@ class Application {
 }
 
 module.exports.SizeModeEnum = SizeModeEnum;
+module.exports.RenderingModeEnum = RenderingModeEnum;
 module.exports.Application = Application;
-},{"./gfx3/gfx3_manager":15,"./screen/screen_manager":26,"./ui/ui_manager":38}],3:[function(require,module,exports){
+},{"./gfx2/gfx2_manager":10,"./gfx3/gfx3_manager":21,"./screen/screen_manager":32,"./ui/ui_manager":44}],3:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 
 /**
@@ -360,7 +380,7 @@ class BoundingBox {
 }
 
 module.exports.BoundingBox = BoundingBox;
-},{"../helpers":22}],5:[function(require,module,exports){
+},{"../helpers":28}],5:[function(require,module,exports){
 let { Utils } = require('../helpers');
 
 /**
@@ -502,7 +522,7 @@ class BoundingRect {
 }
 
 module.exports.BoundingRect = BoundingRect;
-},{"../helpers":22}],6:[function(require,module,exports){
+},{"../helpers":28}],6:[function(require,module,exports){
 let { EventSubscriber } = require('./event_subscriber');
 
 /**
@@ -639,6 +659,559 @@ class EventSubscriber {
 
 module.exports.EventSubscriber = EventSubscriber;
 },{}],8:[function(require,module,exports){
+let { gfx2Manager } = require('./gfx2_manager');
+
+class Gfx2Drawable {
+  constructor() {
+    this.position = [0, 0];
+    this.rotation = 0;
+    this.offset = [0, 0];
+    this.visible = true;
+  }
+
+  getPosition() {
+    return this.position;
+  }
+
+  getPositionX() {
+    return this.position[0];
+  }
+
+  getPositionY() {
+    return this.position[1];
+  }
+
+  setPosition(x, y) {
+    this.position = [x, y];
+  }
+
+  getRotation() {
+    return this.rotation;
+  }
+
+  setRotation(rotation) {
+    this.rotation = rotation;
+  }
+
+  getOffset() {
+    return this.offset;
+  }
+
+  getOffsetX() {
+    return this.offset[0];
+  }
+
+  getOffsetY() {
+    return this.offset[1];
+  }
+
+  setOffset(x, y) {
+    this.offset = [x, y];
+  }
+
+  isVisible() {
+    return this.visible;
+  }
+
+  setVisible(visible) {
+    this.visible = visible;
+  }
+
+  update(ts) {
+    // virtual method called during update phase !
+  }
+
+  draw(ts) {
+    if (!this.visible) {
+      return;
+    }
+
+    let ctx = gfx2Manager.getContext();
+
+    ctx.save();
+    ctx.translate(-this.offset[0], -this.offset[1]);
+    ctx.translate(this.position[0], this.position[1]);
+    ctx.rotate(this.rotation);
+    this.paint(ts);
+    ctx.restore();
+  }
+
+  paint(ts) {
+    // virtual method called during draw phase !
+  }
+}
+
+module.exports.Gfx2Drawable = Gfx2Drawable;
+},{"./gfx2_manager":10}],9:[function(require,module,exports){
+let { eventManager } = require('../event/event_manager');
+let { Gfx2Drawable } = require('./gfx2_drawable');
+let { gfx2Manager } = require('./gfx2_manager');
+let { gfx2TextureManager } = require('./gfx2_texture_manager');
+
+class JAS {
+  constructor() {
+    this.animations = [];
+  }
+}
+
+class JASFrame {
+  constructor() {
+    this.x = 0;
+    this.y = 0;
+    this.width = 0;
+    this.height = 0;
+  }
+}
+
+class JASAnimation {
+  constructor() {
+    this.name = '';
+    this.frames = [];
+    this.frameDuration = 0;
+  }
+}
+
+class Gfx2JAS extends Gfx2Drawable {
+  constructor() {
+    super();
+    this.jas = new JAS();
+    this.texture = gfx2TextureManager.getDefaultTexture();
+    this.currentAnimationName = '';
+    this.currentAnimationFrameIndex = 0;
+    this.isLooped = false;
+    this.frameProgress = 0;
+  }
+
+  getTexture() {
+    return this.texture;
+  }
+
+  setTexture(texture) {
+    this.texture = texture;
+  }
+
+  update(ts) {
+    let currentAnimation = this.jas.animations.find(a => a.name == this.currentAnimationName);
+    if (!currentAnimation) {
+      return;
+    }
+
+    if (this.frameProgress >= currentAnimation.frameDuration) {
+      if (this.currentAnimationFrameIndex == currentAnimation.frames.length - 1) {
+        eventManager.emit(this, 'E_FINISHED');
+        this.currentAnimationFrameIndex = this.isLooped ? 0 : currentAnimation.frames.length - 1;
+        this.frameProgress = 0;
+      }
+      else {
+        this.currentAnimationFrameIndex = this.currentAnimationFrameIndex + 1;
+        this.frameProgress = 0;
+      }
+    }
+    else {
+      this.frameProgress += ts;
+    }
+  }
+
+  paint(ts) {
+    let currentAnimation = this.jas.animations.find(animation => animation.name == this.currentAnimationName);
+    if (!currentAnimation) {
+      return;
+    }
+
+    let ctx = gfx2Manager.getContext();
+    let currentFrame = currentAnimation.frames[this.currentAnimationFrameIndex];
+    ctx.drawImage(this.texture, currentFrame.x, currentFrame.y, currentFrame.width, currentFrame.height, 0, 0, currentFrame.width, currentFrame.height);
+  }
+
+  play(animationName, isLooped = false, preventSameAnimation = false) {
+    if (preventSameAnimation && animationName == this.currentAnimationName) {
+      return;
+    }
+
+    const animation = this.jas.animations.find(animation => animation.name == animationName);
+    if (!animation) {
+      throw new Error('Gfx2JAS::play: animation not found.');
+    }
+
+    this.currentAnimationName = animationName;
+    this.currentAnimationFrameIndex = 0;
+    this.isLooped = isLooped;
+    this.frameProgress = 0;
+  }
+
+  async loadFromFile(path) {
+    const response = await fetch(path);
+    const json = await response.json();
+
+    this.jas = new JAS();
+
+    for (let obj of json['Animations']) {
+      let animation = new JASAnimation();
+      animation.name = obj['Name'];
+      animation.frameDuration = parseInt(obj['FrameDuration']);
+
+      for (let objFrame of obj['Frames']) {
+        let frame = new JASFrame();
+        frame.x = objFrame['X'];
+        frame.y = objFrame['Y'];
+        frame.width = objFrame['Width'];
+        frame.height = objFrame['Height'];
+        animation.frames.push(frame);
+      }
+
+      this.jas.animations.push(animation);
+    }
+
+    this.currentAnimationName = '';
+    this.currentAnimationFrameIndex = 0;
+    this.frameProgress = 0;
+  }
+}
+
+module.exports.Gfx2JAS = Gfx2JAS;
+},{"../event/event_manager":6,"./gfx2_drawable":8,"./gfx2_manager":10,"./gfx2_texture_manager":13}],10:[function(require,module,exports){
+class Gfx2Manager {
+  constructor() {
+    this.canvas = null;
+    this.ctx = null;
+    this.cameraPosition = [0, 0];
+
+    this.canvas = document.getElementById('CANVAS_2D');
+    if (!this.canvas) {
+      throw new Error('Gfx2Manager::Gfx2Manager: CANVAS_2D not found');
+    }
+
+    this.ctx = this.canvas.getContext('2d');
+    if (!this.ctx) {
+      throw new Error('Gfx2Manager::Gfx2Manager: Your browser not support 2D');
+    }
+  }
+
+  update(ts) {
+    if (this.canvas.width != this.canvas.clientWidth || this.canvas.height != this.canvas.clientHeight) {
+      this.canvas.width = this.canvas.clientWidth;
+      this.canvas.height = this.canvas.clientHeight;
+    }
+  }
+
+  clear() {
+    this.ctx.restore();
+    this.ctx.save();
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);    
+    this.ctx.translate(-this.cameraPosition[0] + this.canvas.width * 0.5, -this.cameraPosition[1] + this.canvas.height * 0.5);
+  }
+
+  moveCamera(x, y) {
+    this.cameraPosition[0] += x;
+    this.cameraPosition[1] += y;
+  }
+
+  findCanvasFromClientPosition(clientX, clientY) {
+    let rect = this.canvas.getBoundingClientRect();
+    let x = clientX - rect.x;
+    let y = clientY - rect.y;
+    return [x, y];
+  }
+
+  findWorldFromClientPosition(clientX, clientY) {
+    let rect = this.canvas.getBoundingClientRect();
+    let x = (clientX - rect.x) + this.cameraPosition[0] - this.canvas.width * 0.5;
+    let y = (clientY - rect.y) + this.cameraPosition[1] - this.canvas.height * 0.5;
+    return [x, y];
+  }
+
+  getWidth() {
+    return this.canvas.clientWidth;
+  }
+
+  getHeight() {
+    return this.canvas.clientHeight;
+  }
+
+  getContext() {
+    return this.ctx;
+  }
+
+  setCameraPosition(x, y) {
+    this.cameraPosition[0] = x;
+    this.cameraPosition[1] = y;
+  }
+
+  getCameraPosition() {
+    return this.cameraPosition;
+  }
+
+  getCameraPositionX() {
+    return this.cameraPosition[0];
+  }
+
+  getCameraPositionY() {
+    return this.cameraPosition[1];
+  }
+}
+
+module.exports.gfx2Manager = new Gfx2Manager();
+},{}],11:[function(require,module,exports){
+let { gfx2TextureManager } = require('./gfx2_texture_manager');
+
+class Gfx2Map {
+  constructor() {
+    this.rows = 0;
+    this.columns = 0;
+    this.tileHeight = 0;
+    this.tileWidth = 0;
+    this.tileLayers = [];
+    this.tileset = new Gfx2Tileset();
+  }
+
+  async loadFromFile(path) {
+    let response = await fetch(path);
+    let json = await response.json();
+
+    this.rows = json['Rows'];
+    this.columns = json['Columns'];
+    this.tileHeight = json['TileHeight'];
+    this.tileWidth = json['TileWidth'];
+
+    for (let obj of json['Layers']) {
+      let tileLayer = new Gfx2TileLayer();
+      await tileLayer.loadFromData(obj);
+      this.tileLayers.push(tileLayer);
+    }
+
+    await this.tileset.loadFromData(json['Tileset']);
+  }
+
+  getWidth() {
+    return this.columns * this.tileWidth;
+  }
+
+  getHeight() {
+    return this.rows * this.tileHeight;
+  }
+
+  getRows() {
+    return this.rows;
+  }
+
+  getColumns() {
+    return this.columns;
+  }
+
+  getTileHeight() {
+    return this.tileHeight;
+  }
+
+  getTileWidth() {
+    return this.tileWidth;
+  }
+
+  getTileLayers() {
+    return this.tileLayers;
+  }
+
+  getTileLayer(index) {
+    return this.tileLayers[index];
+  }
+
+  getTileset() {
+    return this.tileset;
+  }
+}
+
+class Gfx2TileLayer {
+  constructor() {
+    this.name = '';
+    this.grid = [];
+    this.rows = 0;
+    this.columns = 0;
+    this.visible = true;
+  }
+
+  async loadFromData(data) {
+    this.name = data['Name'];
+    this.grid = data['Grid'];
+    this.rows = data['Rows'];
+    this.columns = data['Columns'];
+    this.visible = data['Visible'];
+  }
+
+  getLocationAt(index) {
+    let y = Math.floor(index / this.columns);
+    let x = index % this.columns;
+    return [x, y];
+  }
+
+  getTileCount() {
+    return this.grid.length;
+  }
+
+  getTile(index) {
+    return this.grid[index];
+  }
+
+  getName() {
+    return this.name;
+  }
+
+  getRows() {
+    return this.rows;
+  }
+
+  getColumns() {
+    return this.columns;
+  }
+
+  isVisible() {
+    return this.visible;
+  }
+
+  setVisible(visible) {
+    this.visible = visible;
+  }
+}
+
+class Gfx2Tileset {
+  constructor() {
+    this.textureWidth = 0;
+    this.textureHeight = 0;
+    this.tileWidth = 0;
+    this.tileHeight = 0;
+    this.columns = 0;
+    this.texture = gfx2TextureManager.getDefaultTexture();
+  }
+
+  async loadFromData(data) {
+    this.textureHeight = parseInt(data['TextureHeight']);
+    this.textureWidth = parseInt(data['TextureWidth']);
+    this.tileWidth = parseInt(data['TileWidth']);
+    this.tileHeight = parseInt(data['TileHeight']);
+    this.columns = parseInt(data['Columns']);
+    this.texture = await gfx2TextureManager.loadTexture(data['TextureFile']);
+  }
+
+  getTilePosition(tileId) {
+    let x = ((tileId - 1) % this.columns) * this.tileWidth;
+    let y = Math.floor((tileId - 1) / this.columns) * this.tileHeight;
+    return [x, y];
+  }
+
+  getTexture() {
+    return this.texture;
+  }
+
+  getColumn() {
+    return this.columns;
+  }
+
+  getTileHeight() {
+    return this.tileHeight;
+  }
+
+  getTileWidth() {
+    return this.tileWidth;
+  }
+
+  getTextureHeight() {
+    return this.textureHeight;
+  }
+
+  getTextureWidth() {
+    return this.textureWidth;
+  }
+}
+
+module.exports.Gfx2Map = Gfx2Map;
+},{"./gfx2_texture_manager":13}],12:[function(require,module,exports){
+let { Gfx2Drawable } = require('./gfx2_drawable');
+let { gfx2Manager } = require('./gfx2_manager');
+
+class Gfx2MapLayer extends Gfx2Drawable {
+  constructor(map, layerIndex) {
+    super();
+    this.map = map;
+    this.layerIndex = layerIndex;
+  }
+
+  paint(ts) {
+    let ctx = gfx2Manager.getContext();
+    let layer = this.map.getTileLayer(this.layerIndex);
+    let tileset = this.map.getTileset();
+
+    if (!layer) {
+      return;
+    }
+    if (!layer.isVisible()) {
+      return;
+    }
+
+    for (let i = 0; i < layer.getTileCount(); i++) {
+      let texTilePosition = tileset.getTilePosition(layer.getTile(i));
+      let texTileWidth = tileset.getTileWidth();
+      let texTileHeight = tileset.getTileHeight();
+      let location = layer.getLocationAt(i);
+      let x = Math.round(location[0] * this.map.getTileWidth());
+      let y = Math.round(location[1] * this.map.getTileHeight());
+      ctx.drawImage(tileset.getTexture(), texTilePosition[0], texTilePosition[1], texTileWidth, texTileHeight, x, y, this.map.getTileWidth(), this.map.getTileHeight());
+    }
+  }
+}
+
+module.exports.Gfx2MapLayer = Gfx2MapLayer;
+},{"./gfx2_drawable":8,"./gfx2_manager":10}],13:[function(require,module,exports){
+class Gfx2TextureManager {
+  constructor() {
+    this.textures = {};
+  }
+
+  async loadTexture(path) {
+    return new Promise(resolve => {
+      if (this.textures[path]) {
+        return resolve(this.textures[path]);
+      }
+
+      let image = new Image();
+      image.src = path;
+      image.addEventListener('load', () => {
+        this.textures[path] = image;
+        resolve(image);
+      });
+    });
+  }
+
+  deleteTexture(path) {
+    if (!this.textures[path]) {
+      throw new Error('Gfx2TextureManager::deleteTexture(): The texture file doesn\'t exist, cannot delete !');
+    }
+
+    this.textures[path] = null;
+    delete this.textures[path];
+  }
+
+  getTexture(path) {
+    if (!this.textures[path]) {
+      throw new Error('Gfx2TextureManager::getTexture(): The texture file doesn\'t exist, cannot get !');
+    }
+
+    return this.textures[path];
+  }
+
+  getDefaultTexture() {
+    let image = new Image();
+    image.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+    return image;
+  }
+
+  releaseTextures() {
+    for (let path in this.textures) {
+      this.textures[path] = null;
+      delete this.textures[path];
+    }
+  }
+}
+
+module.exports.gfx2TextureManager = new Gfx2TextureManager();
+},{}],14:[function(require,module,exports){
 let { Gfx3Drawable } = require('./gfx3_drawable');
 let { gfx3Manager } = require('./gfx3_manager');
 
@@ -678,7 +1251,7 @@ class Gfx3CollisionBox extends Gfx3Drawable {
 }
 
 module.exports.Gfx3CollisionBox = Gfx3CollisionBox;
-},{"./gfx3_drawable":9,"./gfx3_manager":15}],9:[function(require,module,exports){
+},{"./gfx3_drawable":15,"./gfx3_manager":21}],15:[function(require,module,exports){
 let { BoundingBox } = require('../bounding/bounding_box');
 let { Utils } = require('../helpers');
 
@@ -903,7 +1476,7 @@ class Gfx3Drawable {
 }
 
 module.exports.Gfx3Drawable = Gfx3Drawable;
-},{"../bounding/bounding_box":4,"../helpers":22}],10:[function(require,module,exports){
+},{"../bounding/bounding_box":4,"../helpers":28}],16:[function(require,module,exports){
 let { BoundingBox } = require('../bounding/bounding_box');
 let { Gfx3Drawable } = require('./gfx3_drawable');
 let { gfx3Manager } = require('./gfx3_manager');
@@ -1106,7 +1679,7 @@ class Gfx3JAM extends Gfx3Drawable {
 }
 
 module.exports.Gfx3JAM = Gfx3JAM;
-},{"../bounding/bounding_box":4,"../event/event_manager":6,"./gfx3_drawable":9,"./gfx3_manager":15,"./gfx3_texture_manager":19}],11:[function(require,module,exports){
+},{"../bounding/bounding_box":4,"../event/event_manager":6,"./gfx3_drawable":15,"./gfx3_manager":21,"./gfx3_texture_manager":25}],17:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { BoundingBox } = require('../bounding/bounding_box');
 let { Gfx3Drawable } = require('./gfx3_drawable');
@@ -1252,6 +1825,14 @@ class Gfx3JAS extends Gfx3Drawable {
     return this.offset;
   }
 
+  getOffsetX() {
+    return this.offset[0];
+  }
+
+  getOffsetY() {
+    return this.offset[1];
+  }
+
   /**
    * Définit le décallage du sprite par rapport à l'origine.
    * @param {number} offsetX - Décallage en x.
@@ -1352,7 +1933,7 @@ class Gfx3JAS extends Gfx3Drawable {
 }
 
 module.exports.Gfx3JAS = Gfx3JAS;
-},{"../bounding/bounding_box":4,"../event/event_manager":6,"../helpers":22,"./gfx3_drawable":9,"./gfx3_manager":15,"./gfx3_texture_manager":19}],12:[function(require,module,exports){
+},{"../bounding/bounding_box":4,"../event/event_manager":6,"../helpers":28,"./gfx3_drawable":15,"./gfx3_manager":21,"./gfx3_texture_manager":25}],18:[function(require,module,exports){
 let { BoundingBox } = require('../bounding/bounding_box');
 let { Gfx3Drawable } = require('./gfx3_drawable');
 let { gfx3Manager } = require('./gfx3_manager');
@@ -1454,7 +2035,7 @@ class Gfx3JSM extends Gfx3Drawable {
 }
 
 module.exports.Gfx3JSM = Gfx3JSM;
-},{"../bounding/bounding_box":4,"./gfx3_drawable":9,"./gfx3_manager":15,"./gfx3_texture_manager":19}],13:[function(require,module,exports){
+},{"../bounding/bounding_box":4,"./gfx3_drawable":15,"./gfx3_manager":21,"./gfx3_texture_manager":25}],19:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { BoundingBox } = require('../bounding/bounding_box');
 let { Gfx3Drawable } = require('./gfx3_drawable');
@@ -1570,6 +2151,14 @@ class Gfx3JSS extends Gfx3Drawable {
     return this.offset;
   }
 
+  getOffsetX() {
+    return this.offset[0];
+  }
+
+  getOffsetY() {
+    return this.offset[1];
+  }
+
   /**
    * Définit le décallage du sprite par rapport à l'origine.
    * @param {number} offsetX - Décallage en x.
@@ -1613,7 +2202,7 @@ class Gfx3JSS extends Gfx3Drawable {
 }
 
 module.exports.Gfx3JSS = Gfx3JSS;
-},{"../bounding/bounding_box":4,"../helpers":22,"./gfx3_drawable":9,"./gfx3_manager":15,"./gfx3_texture_manager":19}],14:[function(require,module,exports){
+},{"../bounding/bounding_box":4,"../helpers":28,"./gfx3_drawable":15,"./gfx3_manager":21,"./gfx3_texture_manager":25}],20:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { Gfx3Drawable } = require('./gfx3_drawable');
 let { gfx3Manager } = require('./gfx3_manager');
@@ -1754,7 +2343,7 @@ class Gfx3JWM extends Gfx3Drawable {
 }
 
 module.exports.Gfx3JWM = Gfx3JWM;
-},{"../helpers":22,"./gfx3_drawable":9,"./gfx3_manager":15}],15:[function(require,module,exports){
+},{"../helpers":28,"./gfx3_drawable":15,"./gfx3_manager":21}],21:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { DEFAULT_VERTEX_SHADER, DEFAULT_PIXEL_SHADER, DEBUG_VERTEX_SHADER, DEBUG_PIXEL_SHADER } = require('./gfx3_shaders');
 let { ProjectionModeEnum, Gfx3View } = require('./gfx3_view');
@@ -1776,9 +2365,9 @@ class Gfx3Manager {
     this.debugShaderUniforms = {};
     this.showDebug = false;
 
-    this.canvas = document.getElementById('CANVAS');
+    this.canvas = document.getElementById('CANVAS_3D');
     if (!this.canvas) {
-      throw new Error('Gfx3Manager::Gfx3Manager: CANVAS not found');
+      throw new Error('Gfx3Manager::Gfx3Manager: CANVAS_3D not found');
     }
 
     this.gl = this.canvas.getContext('webgl2');
@@ -2354,7 +2943,7 @@ function CREATE_SHADER(gl, type, source) {
 }
 
 module.exports.gfx3Manager = new Gfx3Manager();
-},{"../helpers":22,"./gfx3_shaders":17,"./gfx3_view":20}],16:[function(require,module,exports){
+},{"../helpers":28,"./gfx3_shaders":23,"./gfx3_view":26}],22:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { Gfx3Drawable } = require('./gfx3_drawable');
 let { gfx3Manager } = require('./gfx3_manager');
@@ -2524,7 +3113,7 @@ class Gfx3Mover extends Gfx3Drawable {
 }
 
 module.exports.Gfx3Mover = Gfx3Mover;
-},{"../event/event_manager":6,"../helpers":22,"./gfx3_drawable":9,"./gfx3_manager":15}],17:[function(require,module,exports){
+},{"../event/event_manager":6,"../helpers":28,"./gfx3_drawable":15,"./gfx3_manager":21}],23:[function(require,module,exports){
 module.exports.DEFAULT_VERTEX_SHADER = `
   attribute vec4 vPosition;
   attribute vec3 vNormal;
@@ -2577,7 +3166,7 @@ module.exports.DEBUG_PIXEL_SHADER = `
   }
 `;
 
-},{}],18:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 /**
  * Classe représentant une texture.
  */
@@ -2590,7 +3179,7 @@ class Gfx3Texture {
 }
 
 module.exports.Gfx3Texture = Gfx3Texture;
-},{}],19:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 let { Gfx3Texture } = require('./gfx3_texture');
 let { gfx3Manager } = require('./gfx3_manager');
 
@@ -2685,7 +3274,7 @@ class Gfx3TextureManager {
 }
 
 module.exports.gfx3TextureManager = new Gfx3TextureManager();
-},{"./gfx3_manager":15,"./gfx3_texture":18}],20:[function(require,module,exports){
+},{"./gfx3_manager":21,"./gfx3_texture":24}],26:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { Gfx3Viewport } = require('./gfx3_viewport');
 
@@ -2966,7 +3555,7 @@ class Gfx3View {
 
 module.exports.ProjectionModeEnum = ProjectionModeEnum;
 module.exports.Gfx3View = Gfx3View;
-},{"../helpers":22,"./gfx3_viewport":21}],21:[function(require,module,exports){
+},{"../helpers":28,"./gfx3_viewport":27}],27:[function(require,module,exports){
 /**
  * Classe représentant la position et la taille d'un rectangle de rendu.
  */
@@ -2980,7 +3569,7 @@ class Gfx3Viewport {
 }
 
 module.exports.Gfx3Viewport = Gfx3Viewport;
-},{}],22:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 class Utils {
   static BIND(fn, ctx) {
     return fn.bind(ctx);
@@ -3594,12 +4183,16 @@ class Utils {
 }
 
 module.exports.Utils = Utils;
-},{}],23:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 let { Application } = require('./application');
 let { ArrayCollection } = require('./array/array_collection');
 let { BoundingBox } = require('./bounding/bounding_box');
 let { BoundingRect } = require('./bounding/bounding_rect');
 let { EventSubscriber } = require('./event/event_subscriber');
+let { Gfx2Drawable } = require('./gfx2/gfx2_drawable');
+let { Gfx2JAS } = require('./gfx2/gfx2_jas');
+let { Gfx2MapLayer } = require('./gfx2/gfx2_map_layer');
+let { Gfx2Map } = require('./gfx2/gfx2_map');
 let { Gfx3CollisionBox } = require('./gfx3/gfx3_collisionbox');
 let { Gfx3Drawable } = require('./gfx3/gfx3_drawable');
 let { Gfx3JAM } = require('./gfx3/gfx3_jam');
@@ -3633,11 +4226,14 @@ let { UISprite } = require('./ui/ui_sprite');
 let { UIText } = require('./ui/ui_text');
 let { UIWidget } = require('./ui/ui_widget');
 let { Utils } = require('./helpers');
-let { SizeModeEnum } = require('./application');
+let { SizeModeEnum, RenderingModeEnum } = require('./application');
 let { ProjectionModeEnum } = require('./gfx3/gfx3_view');
 let { MenuFocusEnum } = require('./ui/ui_menu');
 let { MenuAxisEnum } = require('./ui/ui_menu');
+
 let { inputManager } = require('./input/input_manager');
+let { gfx2Manager } = require('./gfx2/gfx2_manager');
+let { gfx2TextureManager } = require('./gfx2/gfx2_texture_manager');
 let { gfx3Manager } = require('./gfx3/gfx3_manager');
 let { gfx3TextureManager } = require('./gfx3/gfx3_texture_manager');
 let { eventManager } = require('./event/event_manager');
@@ -3651,6 +4247,10 @@ module.exports.GWE = {
   BoundingBox,
   BoundingRect,
   EventSubscriber,
+  Gfx2Drawable,
+  Gfx2JAS,
+  Gfx2MapLayer,
+  Gfx2Map,
   Gfx3CollisionBox,
   Gfx3Drawable,
   Gfx3JAM,
@@ -3685,10 +4285,14 @@ module.exports.GWE = {
   UIWidget,
   Utils,
   SizeModeEnum,
+  RenderingModeEnum,
   ProjectionModeEnum,
   MenuFocusEnum,
   MenuAxisEnum,
+
   inputManager,
+  gfx2Manager,
+  gfx2TextureManager,
   gfx3Manager,
   gfx3TextureManager,
   eventManager,
@@ -3696,7 +4300,7 @@ module.exports.GWE = {
   soundManager,
   uiManager
 };
-},{"./application":2,"./array/array_collection":3,"./bounding/bounding_box":4,"./bounding/bounding_rect":5,"./event/event_manager":6,"./event/event_subscriber":7,"./gfx3/gfx3_collisionbox":8,"./gfx3/gfx3_drawable":9,"./gfx3/gfx3_jam":10,"./gfx3/gfx3_jas":11,"./gfx3/gfx3_jsm":12,"./gfx3/gfx3_jss":13,"./gfx3/gfx3_jwm":14,"./gfx3/gfx3_manager":15,"./gfx3/gfx3_mover":16,"./gfx3/gfx3_shaders":17,"./gfx3/gfx3_texture":18,"./gfx3/gfx3_texture_manager":19,"./gfx3/gfx3_view":20,"./gfx3/gfx3_viewport":21,"./helpers":22,"./input/input_manager":24,"./screen/screen":25,"./screen/screen_manager":26,"./script/script_machine":27,"./sound/sound_manager":28,"./ui/ui_bubble":29,"./ui/ui_description_list":30,"./ui/ui_dialog":31,"./ui/ui_input_range":32,"./ui/ui_input_select":33,"./ui/ui_input_slider":34,"./ui/ui_input_text":35,"./ui/ui_keyboard":36,"./ui/ui_list_view":37,"./ui/ui_manager":38,"./ui/ui_menu":39,"./ui/ui_menu_item_text":40,"./ui/ui_message":41,"./ui/ui_print":42,"./ui/ui_prompt":43,"./ui/ui_sprite":44,"./ui/ui_text":45,"./ui/ui_widget":46}],24:[function(require,module,exports){
+},{"./application":2,"./array/array_collection":3,"./bounding/bounding_box":4,"./bounding/bounding_rect":5,"./event/event_manager":6,"./event/event_subscriber":7,"./gfx2/gfx2_drawable":8,"./gfx2/gfx2_jas":9,"./gfx2/gfx2_manager":10,"./gfx2/gfx2_map":11,"./gfx2/gfx2_map_layer":12,"./gfx2/gfx2_texture_manager":13,"./gfx3/gfx3_collisionbox":14,"./gfx3/gfx3_drawable":15,"./gfx3/gfx3_jam":16,"./gfx3/gfx3_jas":17,"./gfx3/gfx3_jsm":18,"./gfx3/gfx3_jss":19,"./gfx3/gfx3_jwm":20,"./gfx3/gfx3_manager":21,"./gfx3/gfx3_mover":22,"./gfx3/gfx3_shaders":23,"./gfx3/gfx3_texture":24,"./gfx3/gfx3_texture_manager":25,"./gfx3/gfx3_view":26,"./gfx3/gfx3_viewport":27,"./helpers":28,"./input/input_manager":30,"./screen/screen":31,"./screen/screen_manager":32,"./script/script_machine":33,"./sound/sound_manager":34,"./ui/ui_bubble":35,"./ui/ui_description_list":36,"./ui/ui_dialog":37,"./ui/ui_input_range":38,"./ui/ui_input_select":39,"./ui/ui_input_slider":40,"./ui/ui_input_text":41,"./ui/ui_keyboard":42,"./ui/ui_list_view":43,"./ui/ui_manager":44,"./ui/ui_menu":45,"./ui/ui_menu_item_text":46,"./ui/ui_message":47,"./ui/ui_print":48,"./ui/ui_prompt":49,"./ui/ui_sprite":50,"./ui/ui_text":51,"./ui/ui_widget":52}],30:[function(require,module,exports){
 class InputManager {
   constructor() {
     this.keymap = {};
@@ -3718,7 +4322,7 @@ class InputManager {
 }
 
 module.exports.inputManager = new InputManager();
-},{}],25:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 /**
  * Classe représentant un écran.
  */
@@ -3788,7 +4392,7 @@ class Screen {
 }
 
 module.exports.Screen = Screen;
-},{}],26:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 /**
  * Singleton représentant un gestionnaire d'écrans.
  */
@@ -3889,7 +4493,7 @@ class ScreenManager {
 }
 
 module.exports.screenManager = new ScreenManager();
-},{}],27:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 let fs = require('fs');
 
 class JSC {
@@ -4064,7 +4668,7 @@ class ScriptMachine {
 }
 
 module.exports.ScriptMachine = ScriptMachine;
-},{"fs":1}],28:[function(require,module,exports){
+},{"fs":1}],34:[function(require,module,exports){
 /**
  * Singleton représentant un gestionnaire de ressources son.
  */
@@ -4139,7 +4743,7 @@ class SoundManager {
 }
 
 module.exports.soundManager = new SoundManager();
-},{}],29:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 let { UIMenu } = require('./ui_menu');
@@ -4252,7 +4856,7 @@ class UIBubble extends UIWidget {
 }
 
 module.exports.UIBubble = UIBubble;
-},{"../event/event_manager":6,"./ui_menu":39,"./ui_menu_item_text":40,"./ui_widget":46}],30:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_menu":45,"./ui_menu_item_text":46,"./ui_widget":52}],36:[function(require,module,exports){
 let { UIWidget } = require('./ui_widget');
 
 class UIDescriptionList extends UIWidget {
@@ -4324,7 +4928,7 @@ class UIDescriptionList extends UIWidget {
 }
 
 module.exports.UIDescriptionList = UIDescriptionList;
-},{"./ui_widget":46}],31:[function(require,module,exports){
+},{"./ui_widget":52}],37:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -4395,7 +4999,7 @@ class UIDialog extends UIWidget {
 }
 
 module.exports.UIDialog = UIDialog;
-},{"../event/event_manager":6,"./ui_widget":46}],32:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],38:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -4451,7 +5055,7 @@ class UIInputRange extends UIWidget {
 }
 
 module.exports.UIInputRange = UIInputRange;
-},{"../event/event_manager":6,"./ui_widget":46}],33:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],39:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIMenuItemText } = require('./ui_menu_item_text');
 let { UIMenu } = require('./ui_menu');
@@ -4521,7 +5125,7 @@ class UIInputSelectMultiple extends UIMenu {
 
 module.exports.UIInputSelect = UIInputSelect;
 module.exports.UIInputSelectMultiple = UIInputSelectMultiple;
-},{"../event/event_manager":6,"./ui_menu":39,"./ui_menu_item_text":40}],34:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_menu":45,"./ui_menu_item_text":46}],40:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -4581,9 +5185,9 @@ class UIInputSlider extends UIWidget {
 }
 
 module.exports.UIInputSlider = UIInputSlider;
-},{"../event/event_manager":6,"./ui_widget":46}],35:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],41:[function(require,module,exports){
 module.exports.UIInputText = {};
-},{}],36:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -4775,7 +5379,7 @@ class UIKeyboard extends UIWidget {
 }
 
 module.exports.UIKeyboard = UIKeyboard;
-},{"../event/event_manager":6,"./ui_widget":46}],37:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],43:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { ArrayCollection } = require('../array/array_collection');
 let { UIMenu } = require('./ui_menu');
@@ -4882,7 +5486,7 @@ class UIListView extends UIMenu {
 }
 
 module.exports.UIListView = UIListView;
-},{"../array/array_collection":3,"../event/event_manager":6,"./ui_menu":39}],38:[function(require,module,exports){
+},{"../array/array_collection":3,"../event/event_manager":6,"./ui_menu":45}],44:[function(require,module,exports){
 let { eventManager} = require('../event/event_manager');
 const { UIWidget } = require('./ui_widget');
 
@@ -5066,7 +5670,7 @@ class UIManager {
 }
 
 module.exports.uiManager = new UIManager();
-},{"../event/event_manager":6,"./ui_widget":46}],39:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],45:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -5321,7 +5925,7 @@ class UIMenu extends UIWidget {
 module.exports.MenuFocusEnum = MenuFocusEnum;
 module.exports.MenuAxisEnum = MenuAxisEnum;
 module.exports.UIMenu = UIMenu;
-},{"../event/event_manager":6,"./ui_widget":46}],40:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],46:[function(require,module,exports){
 let { UIWidget } = require('./ui_widget');
 
 class UIMenuItemText extends UIWidget {
@@ -5339,7 +5943,7 @@ class UIMenuItemText extends UIWidget {
 }
 
 module.exports.UIMenuItemText = UIMenuItemText;
-},{"./ui_widget":46}],41:[function(require,module,exports){
+},{"./ui_widget":52}],47:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -5417,7 +6021,7 @@ class UIMessage extends UIWidget {
 }
 
 module.exports.UIMessage = UIMessage;
-},{"../event/event_manager":6,"./ui_widget":46}],42:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],48:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -5483,7 +6087,7 @@ class UIPrint extends UIWidget {
 }
 
 module.exports.UIPrint = UIPrint;
-},{"../event/event_manager":6,"./ui_widget":46}],43:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],49:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 let { UIMenuItemText } = require('./ui_menu_item_text');
@@ -5540,7 +6144,7 @@ class UIPrompt extends UIWidget {
 }
 
 module.exports.UIPrompt = UIPrompt;
-},{"../event/event_manager":6,"./ui_menu":39,"./ui_menu_item_text":40,"./ui_widget":46}],44:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_menu":45,"./ui_menu_item_text":46,"./ui_widget":52}],50:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -5610,14 +6214,11 @@ class UISprite extends UIWidget {
     }
   }
 
-  async loadFromFile(path) {
-    let response = await fetch(path);
-    let json = await response.json();
-
+  loadFromData(data) {
     this.jas = new JAS();
-    this.jas.imageFile = json['ImageFile'];
+    this.jas.imageFile = data['ImageFile'];
 
-    for (let obj of json['Animations']) {
+    for (let obj of data['Animations']) {
       let animation = new JASAnimation();
       animation.name = obj['Name'];
       animation.frames = [];
@@ -5641,6 +6242,18 @@ class UISprite extends UIWidget {
     this.timeElapsed = 0;
   }
 
+  async loadFromFile(path) {
+    let response = await fetch(path);
+    this.loadFromData(await response.json());
+  }
+
+  loadFromFileSync(path) {
+    let request = new XMLHttpRequest();
+    request.open('GET', path, false);
+    request.send(null);
+    this.loadFromData(JSON.parse(request.responseText));
+  }
+
   play(animationName, isLooped = false, preventSameAnimation = false) {
     if (preventSameAnimation && animationName == this.currentAnimationName) {
       return;
@@ -5659,7 +6272,7 @@ class UISprite extends UIWidget {
 }
 
 module.exports.UISprite = UISprite;
-},{"../event/event_manager":6,"./ui_widget":46}],45:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],51:[function(require,module,exports){
 let { UIWidget } = require('./ui_widget');
 
 class UIText extends UIWidget {
@@ -5676,7 +6289,7 @@ class UIText extends UIWidget {
 }
 
 module.exports.UIText = UIText;
-},{"./ui_widget":46}],46:[function(require,module,exports){
+},{"./ui_widget":52}],52:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 
 /**
@@ -5831,7 +6444,7 @@ class UIWidget {
 }
 
 module.exports.UIWidget = UIWidget;
-},{"../event/event_manager":6}],47:[function(require,module,exports){
+},{"../event/event_manager":6}],53:[function(require,module,exports){
 window.addEventListener('load', async () => {
   let { GWE } = require('gwe');
   let { BootScreen } = require('./screens/boot_screen');
@@ -5840,16 +6453,7 @@ window.addEventListener('load', async () => {
   GWE.screenManager.requestSetScreen(new BootScreen(app));
   requestAnimationFrame(ts => app.run(ts));
 });
-},{"./screens/boot_screen":55,"gwe":23}],48:[function(require,module,exports){
-let DIRECTION = {
-  LEFT: 'LEFT',
-  RIGHT: 'RIGHT',
-  FORWARD: 'FORWARD',
-  BACKWARD: 'BACKWARD'
-};
-
-module.exports.DIRECTION = DIRECTION;
-},{}],49:[function(require,module,exports){
+},{"./screens/boot_screen":61,"gwe":29}],54:[function(require,module,exports){
 let { GWE } = require('gwe');
 
 class CameraFollow {
@@ -5898,20 +6502,19 @@ class CameraFollow {
 }
 
 module.exports.CameraFollow = CameraFollow;
-},{"gwe":23}],50:[function(require,module,exports){
+},{"gwe":29}],55:[function(require,module,exports){
 let { GWE } = require('gwe');
-let { DIRECTION } = require('../core/enums');
+let { DIRECTION, DIRECTION_TO_VEC3 } = require('../enums');
 
 class Controller extends GWE.Gfx3Drawable {
   constructor() {
     super();
+    this.controllable = true;
     this.jas = new GWE.Gfx3JAS();
     this.moving = false;
     this.direction = DIRECTION.FORWARD;
     this.radius = 0;
     this.speed = 3;
-    this.width = 0;
-    this.height = 0;
 
     this.jas.setRotation(0.52, 0.78, 0);
     this.jas.setPixelsPerUnit(48);
@@ -5919,17 +6522,43 @@ class Controller extends GWE.Gfx3Drawable {
 
   async loadFromData(data) {
     await this.jas.loadFromFile(data['JASFile']);
-    let texture = await GWE.gfx3TextureManager.loadTexture(data['TextureFile']);
-    this.jas.setTexture(texture);
-    this.jas.setOffset(data['Width'] / 2, data['Height'] / 2);
+    this.jas.setTexture(await GWE.gfx3TextureManager.loadTexture(data['TextureFile']));
+    this.jas.setOffset(data['OffsetX'], data['OffsetY']);
     this.radius = data['Radius'];
-    this.width = data['Width'];
-    this.height = data['Height'];
   }
 
   update(ts) {
-    let offsetY = this.height / (this.jas.getPixelsPerUnit() * 2);
-    this.jas.setPosition(this.position[0], this.position[1] + offsetY, this.position[2]);
+    if (this.controllable) {
+      if (GWE.inputManager.isKeyDown('ArrowLeft')) {
+        this.moving = true;
+        this.direction = DIRECTION.LEFT;
+      }
+      else if (GWE.inputManager.isKeyDown('ArrowRight')) {
+        this.moving = true;
+        this.direction = DIRECTION.RIGHT;
+      }
+      else if (GWE.inputManager.isKeyDown('ArrowUp')) {
+        this.moving = true;
+        this.direction = DIRECTION.FORWARD;
+      }
+      else if (GWE.inputManager.isKeyDown('ArrowDown')) {
+        this.moving = true;
+        this.direction = DIRECTION.BACKWARD;
+      }
+      else {
+        this.moving = false;
+      }
+
+      if (this.moving) {
+        let prevPositionX = this.position[0];
+        let prevPositionZ = this.position[2];
+        this.position[0] += DIRECTION_TO_VEC3[this.direction][0] * this.speed * (ts / 1000);
+        this.position[2] += DIRECTION_TO_VEC3[this.direction][2] * this.speed * (ts / 1000);
+        GWE.eventManager.emit(this, 'E_MOVED', { prevPositionX, prevPositionZ });
+      }
+    }
+
+    this.jas.setPosition(this.position[0], this.position[1] + this.jas.getOffsetY() / this.jas.getPixelsPerUnit(), this.position[2]);
     this.jas.play(this.moving ? 'RUN_' + this.direction : 'IDLE_' + this.direction, true, true);
     this.jas.update(ts);
   }
@@ -5938,42 +6567,21 @@ class Controller extends GWE.Gfx3Drawable {
     this.jas.draw(viewIndex);
   }
 
-  getMoveDir() {
-    if (this.direction == DIRECTION.FORWARD) {
-      return GWE.Utils.VEC3_FORWARD;
+  handleKeyDownOnce(e) {
+    if (!this.controllable) {
+      return;
     }
-    else if (this.direction == DIRECTION.BACKWARD) {
-      return GWE.Utils.VEC3_BACKWARD;
-    }
-    else if (this.direction == DIRECTION.LEFT) {
-      return GWE.Utils.VEC3_LEFT;
-    }
-    else if (this.direction == DIRECTION.RIGHT) {
-      return GWE.Utils.VEC3_RIGHT;
-    }
-    else {
-      return GWE.Utils.VEC3_ZERO;
+
+    if (e.key == 'Enter') {
+      let handPositionX = this.position[0] + DIRECTION_TO_VEC3[this.direction][0] * (this.radius + 0.5);
+      let handPositionY = this.position[1];
+      let handPositionZ = this.position[2] + DIRECTION_TO_VEC3[this.direction][2] * (this.radius + 0.5);
+      GWE.eventManager.emit(this, 'E_ACTION_PUSHED', { handPositionX, handPositionY, handPositionZ });
     }
   }
 
-  getVelocity() {
-    return GWE.Utils.VEC3_SCALE(this.getMoveDir(), this.speed);
-  }
-
-  getHandPosition() {
-    return GWE.Utils.VEC3_ADD(this.position, GWE.Utils.VEC3_SCALE(this.getMoveDir(), this.radius + 0.5));
-  }
-
-  isMoving() {
-    return this.moving;
-  }
-
-  setMoving(moving) {
-    this.moving = moving;
-  }
-
-  getDirection() {
-    return this.direction;
+  setControllable(controllable) {
+    this.controllable = controllable;
   }
 
   setDirection(direction) {
@@ -5983,14 +6591,10 @@ class Controller extends GWE.Gfx3Drawable {
   getRadius() {
     return this.radius;
   }
-
-  getSpeed() {
-    return this.speed;
-  }
 }
 
 module.exports.Controller = Controller;
-},{"../core/enums":48,"gwe":23}],51:[function(require,module,exports){
+},{"../enums":60,"gwe":29}],56:[function(require,module,exports){
 let { GWE } = require('gwe');
 
 class Model extends GWE.Gfx3Drawable {
@@ -5998,8 +6602,6 @@ class Model extends GWE.Gfx3Drawable {
     super();
     this.jas = new GWE.Gfx3JAS();
     this.radius = 0;
-    this.width = 0;
-    this.height = 0;
     this.onActionBlockId = '';
 
     this.jas.setRotation(0.52, 0.78, 0);
@@ -6009,20 +6611,17 @@ class Model extends GWE.Gfx3Drawable {
   async loadFromData(data) {
     await this.jas.loadFromFile(data['JASFile']);
     this.jas.setTexture(await GWE.gfx3TextureManager.loadTexture(data['TextureFile']));
-    this.jas.setOffset(data['Width'] / 2, data['Height'] / 2);
+    this.jas.setOffset(data['OffsetX'], data['OffsetY']);
     this.jas.play(data['Animation'], true);
     this.position[0] = data['PositionX'];
     this.position[1] = data['PositionY'];
     this.position[2] = data['PositionZ'];
     this.radius = data['Radius'];
-    this.width = data['Width'];
-    this.height = data['Height'];
     this.onActionBlockId = data['OnActionBlockId'];
   }
 
   update(ts) {
-    let offsetY = this.height / (this.jas.getPixelsPerUnit() * 2);
-    this.jas.setPosition(this.position[0], this.position[1] + offsetY, this.position[2]);
+    this.jas.setPosition(this.position[0], this.position[1] + this.jas.getOffsetY() / this.jas.getPixelsPerUnit(), this.position[2]);
     this.jas.update(ts);
   }
 
@@ -6040,9 +6639,8 @@ class Model extends GWE.Gfx3Drawable {
 }
 
 module.exports.Model = Model;
-},{"gwe":23}],52:[function(require,module,exports){
+},{"gwe":29}],57:[function(require,module,exports){
 let { GWE } = require('gwe');
-let { DIRECTION } = require('../core/enums');
 let { Spawn } = require('../entities/spawn');
 let { Model } = require('../entities/model');
 let { Trigger } = require('../entities/trigger');
@@ -6122,46 +6720,16 @@ class Room {
     await this.scriptMachine.loadFromFile(json['ScriptFile']);
     this.scriptMachine.jump('ON_INIT');
     this.scriptMachine.setEnabled(true);
+
+    GWE.eventManager.subscribe(this.controller, 'E_ACTION_PUSHED', this, this.handleControllerActionPushed);
+    GWE.eventManager.subscribe(this.controller, 'E_MOVED', this, this.handleControllerActionMoved);
   }
 
   handleKeyDownOnce(e) {
-    if (!this.running) {
-      return;
-    }
-
-    if (e.key == 'Enter') {
-      this.operationControllerAction();
-    }
+    this.controller.handleKeyDownOnce(e);
   }
 
   update(ts) {
-    if (this.running) {
-      if (GWE.inputManager.isKeyDown('ArrowLeft')) {
-        this.controller.setMoving(true);
-        this.controller.setDirection(DIRECTION.LEFT);
-      }
-      else if (GWE.inputManager.isKeyDown('ArrowRight')) {
-        this.controller.setMoving(true);
-        this.controller.setDirection(DIRECTION.RIGHT);
-      }
-      else if (GWE.inputManager.isKeyDown('ArrowUp')) {
-        this.controller.setMoving(true);
-        this.controller.setDirection(DIRECTION.FORWARD);
-      }
-      else if (GWE.inputManager.isKeyDown('ArrowDown')) {
-        this.controller.setMoving(true);
-        this.controller.setDirection(DIRECTION.BACKWARD);
-      }
-      else {
-        this.controller.setMoving(false);
-      }
-
-      if (this.controller.isMoving()) {
-        let velocity = this.controller.getVelocity();
-        this.operationControllerMove(velocity[0] * (ts / 1000), velocity[2] * (ts / 1000));
-      }
-    }
-
     this.map.update(ts);
     this.walkmesh.update(ts);
     this.controller.update(ts);
@@ -6207,9 +6775,10 @@ class Room {
     }
   }
 
-  operationControllerAction() {
+  handleControllerActionPushed({ handPositionX, handPositionY, handPositionZ }) {
     let position = this.controller.getPosition();
     let radius = this.controller.getRadius();
+
     for (let trigger of this.triggers) {
       if (GWE.Utils.VEC3_DISTANCE(trigger.getPosition(), position) <= radius + trigger.getRadius()) {
         if (trigger.getOnActionBlockId()) {
@@ -6219,9 +6788,8 @@ class Room {
       }
     }
 
-    let handPosition = this.controller.getHandPosition();
     for (let model of this.models) {
-      if (GWE.Utils.VEC3_DISTANCE(model.getPosition(), handPosition) <= model.getRadius()) {
+      if (GWE.Utils.VEC3_DISTANCE(model.getPosition(), [handPositionX, handPositionY, handPositionZ]) <= model.getRadius()) {
         if (model.getOnActionBlockId()) {
           this.scriptMachine.jump(model.getOnActionBlockId());
           return;
@@ -6230,29 +6798,31 @@ class Room {
     }
   }
 
-  operationControllerMove(mx, mz) {
+  handleControllerActionMoved({ prevPositionX, prevPositionZ }) {
+    let position = this.controller.getPosition();
     let radius = this.controller.getRadius();
-    let nextPosition = GWE.Utils.VEC3_ADD(this.controller.getPosition(), [mx, 0, mz]);
 
     for (let other of this.models) {
-      if (GWE.Utils.VEC3_DISTANCE(other.getPosition(), nextPosition) <= radius + other.getRadius()) {
+      if (GWE.Utils.VEC3_DISTANCE(other.getPosition(), position) <= radius + other.getRadius()) {
+        this.controller.setPosition(prevPositionX, position[1], prevPositionZ);
         return;
       }
     }
 
-    let p0Elevation = this.walkmesh.getElevationAt(nextPosition[0], nextPosition[2]);
-    let p1Elevation = this.walkmesh.getElevationAt(nextPosition[0] - radius, nextPosition[2] - radius);
-    let p2Elevation = this.walkmesh.getElevationAt(nextPosition[0] - radius, nextPosition[2] + radius);
-    let p3Elevation = this.walkmesh.getElevationAt(nextPosition[0] + radius, nextPosition[2] - radius);
-    let p4Elevation = this.walkmesh.getElevationAt(nextPosition[0] + radius, nextPosition[2] + radius);
+    let p0Elevation = this.walkmesh.getElevationAt(position[0], position[2]);
+    let p1Elevation = this.walkmesh.getElevationAt(position[0] - radius, position[2] - radius);
+    let p2Elevation = this.walkmesh.getElevationAt(position[0] - radius, position[2] + radius);
+    let p3Elevation = this.walkmesh.getElevationAt(position[0] + radius, position[2] - radius);
+    let p4Elevation = this.walkmesh.getElevationAt(position[0] + radius, position[2] + radius);
     if (p0Elevation == Infinity || p1Elevation == Infinity || p2Elevation == Infinity || p3Elevation == Infinity || p4Elevation == Infinity) {
+      this.controller.setPosition(prevPositionX, position[1], prevPositionZ);
       return;
     }
 
-    this.controller.setPosition(nextPosition[0], p0Elevation, nextPosition[2]);
+    this.controller.setPosition(position[0], p0Elevation, position[2]);
 
     for (let trigger of this.triggers) {
-      let distance = GWE.Utils.VEC3_DISTANCE(trigger.getPosition(), nextPosition);
+      let distance = GWE.Utils.VEC3_DISTANCE(trigger.getPosition(), position);
       let distanceMin = radius + trigger.getRadius();
 
       if (trigger.getOnEnterBlockId() && !trigger.isHovered() && distance < distanceMin) {
@@ -6267,11 +6837,11 @@ class Room {
   }
 
   $continue() {
-    this.running = true;
+    this.controller.setControllable(true);
   }
 
   $stop() {
-    this.running = false;
+    this.controller.setControllable(false);
   }
 
   async $uiCreateDialog(author, text) {
@@ -6288,9 +6858,9 @@ class Room {
 }
 
 module.exports.Room = Room;
-},{"../core/enums":48,"../entities/camera_follow":49,"../entities/controller":50,"../entities/model":51,"../entities/spawn":53,"../entities/trigger":54,"gwe":23}],53:[function(require,module,exports){
+},{"../entities/camera_follow":54,"../entities/controller":55,"../entities/model":56,"../entities/spawn":58,"../entities/trigger":59,"gwe":29}],58:[function(require,module,exports){
 let { GWE } = require('gwe');
-let { DIRECTION } = require('../core/enums');
+let { DIRECTION } = require('../enums');
 
 class Spawn extends GWE.Gfx3Drawable {
   constructor() {
@@ -6321,7 +6891,7 @@ class Spawn extends GWE.Gfx3Drawable {
 }
 
 module.exports.Spawn = Spawn;
-},{"../core/enums":48,"gwe":23}],54:[function(require,module,exports){
+},{"../enums":60,"gwe":29}],59:[function(require,module,exports){
 let { GWE } = require('gwe');
 
 class Trigger extends GWE.Gfx3Drawable {
@@ -6365,7 +6935,26 @@ class Trigger extends GWE.Gfx3Drawable {
 }
 
 module.exports.Trigger = Trigger;
-},{"gwe":23}],55:[function(require,module,exports){
+},{"gwe":29}],60:[function(require,module,exports){
+let { GWE } = require('gwe');
+
+let DIRECTION = {
+  LEFT: 'LEFT',
+  RIGHT: 'RIGHT',
+  FORWARD: 'FORWARD',
+  BACKWARD: 'BACKWARD'
+};
+
+let DIRECTION_TO_VEC3 = {
+  LEFT: GWE.Utils.VEC3_LEFT,
+  RIGHT: GWE.Utils.VEC3_RIGHT,
+  FORWARD: GWE.Utils.VEC3_FORWARD,
+  BACKWARD: GWE.Utils.VEC3_BACKWARD
+};
+
+module.exports.DIRECTION = DIRECTION;
+module.exports.DIRECTION_TO_VEC3 = DIRECTION_TO_VEC3;
+},{"gwe":29}],61:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { GameScreen } = require('./game_screen');
 
@@ -6395,7 +6984,7 @@ class BootScreen extends GWE.Screen {
 }
 
 module.exports.BootScreen = BootScreen;
-},{"./game_screen":56,"gwe":23}],56:[function(require,module,exports){
+},{"./game_screen":62,"gwe":29}],62:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { Room } = require('../entities/room');
 
@@ -6433,4 +7022,4 @@ class GameScreen extends GWE.Screen {
 }
 
 module.exports.GameScreen = GameScreen;
-},{"../entities/room":52,"gwe":23}]},{},[47]);
+},{"../entities/room":57,"gwe":29}]},{},[53]);

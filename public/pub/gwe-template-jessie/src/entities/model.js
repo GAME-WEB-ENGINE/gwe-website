@@ -5,8 +5,6 @@ class Model extends GWE.Gfx3Drawable {
     super();
     this.jas = new GWE.Gfx3JAS();
     this.radius = 0;
-    this.width = 0;
-    this.height = 0;
     this.onActionBlockId = '';
 
     this.jas.setRotation(0.52, 0.78, 0);
@@ -16,20 +14,17 @@ class Model extends GWE.Gfx3Drawable {
   async loadFromData(data) {
     await this.jas.loadFromFile(data['JASFile']);
     this.jas.setTexture(await GWE.gfx3TextureManager.loadTexture(data['TextureFile']));
-    this.jas.setOffset(data['Width'] / 2, data['Height'] / 2);
+    this.jas.setOffset(data['OffsetX'], data['OffsetY']);
     this.jas.play(data['Animation'], true);
     this.position[0] = data['PositionX'];
     this.position[1] = data['PositionY'];
     this.position[2] = data['PositionZ'];
     this.radius = data['Radius'];
-    this.width = data['Width'];
-    this.height = data['Height'];
     this.onActionBlockId = data['OnActionBlockId'];
   }
 
   update(ts) {
-    let offsetY = this.height / (this.jas.getPixelsPerUnit() * 2);
-    this.jas.setPosition(this.position[0], this.position[1] + offsetY, this.position[2]);
+    this.jas.setPosition(this.position[0], this.position[1] + this.jas.getOffsetY() / this.jas.getPixelsPerUnit(), this.position[2]);
     this.jas.update(ts);
   }
 

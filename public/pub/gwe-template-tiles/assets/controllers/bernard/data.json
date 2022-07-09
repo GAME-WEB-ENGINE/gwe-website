@@ -1,0 +1,12 @@
+{
+  "JASFile": "assets/controllers/bernard/sprite.jas",
+  "TextureFile": "assets/controllers/bernard/sprite.png",
+  "OffsetX": 8,
+  "OffsetY": 8,
+  "Width": 16,
+  "Height": 16,
+  "ColliderLeftOffsetX": -4,
+  "ColliderLeftOffsetY": 8,
+  "ColliderRightOffsetX": 4,
+  "ColliderRightOffsetY": 8
+}

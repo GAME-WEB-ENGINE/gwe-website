@@ -2,6 +2,7 @@
 
 },{}],2:[function(require,module,exports){
 let { screenManager } = require('./screen/screen_manager');
+let { gfx2Manager } = require('./gfx2/gfx2_manager');
 let { gfx3Manager } = require('./gfx3/gfx3_manager');
 let { uiManager } = require('./ui/ui_manager');
 
@@ -18,6 +19,11 @@ let SizeModeEnum = {
   FULL: 3
 };
 
+let RenderingModeEnum = {
+  CANVAS_3D: 0,
+  CANVAS_2D: 1
+};
+
 /**
  * Classe représentant l'application.
  */
@@ -25,13 +31,14 @@ class Application {
   /**
    * Créer une application gwe.
    */
-  constructor(resolutionWidth, resolutionHeight, sizeMode = SizeModeEnum.FIT) {
+  constructor(resolutionWidth, resolutionHeight, sizeMode = SizeModeEnum.FIT, renderingMode = RenderingModeEnum.CANVAS_3D) {
     this.container = null;
     this.timeStep = 0;
     this.timeStamp = 0;
     this.resolutionWidth = resolutionWidth;
     this.resolutionHeight = resolutionHeight;
     this.sizeMode = sizeMode;
+    this.renderingMode = renderingMode;
 
     this.container = document.getElementById('APP');
     if (!this.container) {
@@ -90,13 +97,25 @@ class Application {
     this.timeStep = Math.min(timeStamp - this.timeStamp, 100);
     this.timeStamp = timeStamp;
 
-    gfx3Manager.update(this.timeStep);
+    if (this.renderingMode == RenderingModeEnum.CANVAS_2D) {
+      gfx2Manager.update(this.timeStep);
+    }
+    else if (this.renderingMode == RenderingModeEnum.CANVAS_3D) {
+      gfx3Manager.update(this.timeStep);
+    }
+    
     uiManager.update(this.timeStep);
     screenManager.update(this.timeStep);
 
-    for (let i = 0; i < gfx3Manager.getNumViews(); i++) {
-      gfx3Manager.clear(i);
-      screenManager.draw(i);
+    if (this.renderingMode == RenderingModeEnum.CANVAS_2D) {
+      gfx2Manager.clear();
+      screenManager.draw(0);
+    }
+    else if (this.renderingMode == RenderingModeEnum.CANVAS_3D) {
+      for (let i = 0; i < gfx3Manager.getNumViews(); i++) {
+        gfx3Manager.clear(i);
+        screenManager.draw(i);
+      }
     }
 
     requestAnimationFrame(timeStamp => this.run(timeStamp));
@@ -104,8 +123,9 @@ class Application {
 }
 
 module.exports.SizeModeEnum = SizeModeEnum;
+module.exports.RenderingModeEnum = RenderingModeEnum;
 module.exports.Application = Application;
-},{"./gfx3/gfx3_manager":15,"./screen/screen_manager":26,"./ui/ui_manager":38}],3:[function(require,module,exports){
+},{"./gfx2/gfx2_manager":10,"./gfx3/gfx3_manager":21,"./screen/screen_manager":32,"./ui/ui_manager":44}],3:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 
 /**
@@ -360,7 +380,7 @@ class BoundingBox {
 }
 
 module.exports.BoundingBox = BoundingBox;
-},{"../helpers":22}],5:[function(require,module,exports){
+},{"../helpers":28}],5:[function(require,module,exports){
 let { Utils } = require('../helpers');
 
 /**
@@ -502,7 +522,7 @@ class BoundingRect {
 }
 
 module.exports.BoundingRect = BoundingRect;
-},{"../helpers":22}],6:[function(require,module,exports){
+},{"../helpers":28}],6:[function(require,module,exports){
 let { EventSubscriber } = require('./event_subscriber');
 
 /**
@@ -639,6 +659,559 @@ class EventSubscriber {
 
 module.exports.EventSubscriber = EventSubscriber;
 },{}],8:[function(require,module,exports){
+let { gfx2Manager } = require('./gfx2_manager');
+
+class Gfx2Drawable {
+  constructor() {
+    this.position = [0, 0];
+    this.rotation = 0;
+    this.offset = [0, 0];
+    this.visible = true;
+  }
+
+  getPosition() {
+    return this.position;
+  }
+
+  getPositionX() {
+    return this.position[0];
+  }
+
+  getPositionY() {
+    return this.position[1];
+  }
+
+  setPosition(x, y) {
+    this.position = [x, y];
+  }
+
+  getRotation() {
+    return this.rotation;
+  }
+
+  setRotation(rotation) {
+    this.rotation = rotation;
+  }
+
+  getOffset() {
+    return this.offset;
+  }
+
+  getOffsetX() {
+    return this.offset[0];
+  }
+
+  getOffsetY() {
+    return this.offset[1];
+  }
+
+  setOffset(x, y) {
+    this.offset = [x, y];
+  }
+
+  isVisible() {
+    return this.visible;
+  }
+
+  setVisible(visible) {
+    this.visible = visible;
+  }
+
+  update(ts) {
+    // virtual method called during update phase !
+  }
+
+  draw(ts) {
+    if (!this.visible) {
+      return;
+    }
+
+    let ctx = gfx2Manager.getContext();
+
+    ctx.save();
+    ctx.translate(-this.offset[0], -this.offset[1]);
+    ctx.translate(this.position[0], this.position[1]);
+    ctx.rotate(this.rotation);
+    this.paint(ts);
+    ctx.restore();
+  }
+
+  paint(ts) {
+    // virtual method called during draw phase !
+  }
+}
+
+module.exports.Gfx2Drawable = Gfx2Drawable;
+},{"./gfx2_manager":10}],9:[function(require,module,exports){
+let { eventManager } = require('../event/event_manager');
+let { Gfx2Drawable } = require('./gfx2_drawable');
+let { gfx2Manager } = require('./gfx2_manager');
+let { gfx2TextureManager } = require('./gfx2_texture_manager');
+
+class JAS {
+  constructor() {
+    this.animations = [];
+  }
+}
+
+class JASFrame {
+  constructor() {
+    this.x = 0;
+    this.y = 0;
+    this.width = 0;
+    this.height = 0;
+  }
+}
+
+class JASAnimation {
+  constructor() {
+    this.name = '';
+    this.frames = [];
+    this.frameDuration = 0;
+  }
+}
+
+class Gfx2JAS extends Gfx2Drawable {
+  constructor() {
+    super();
+    this.jas = new JAS();
+    this.texture = gfx2TextureManager.getDefaultTexture();
+    this.currentAnimationName = '';
+    this.currentAnimationFrameIndex = 0;
+    this.isLooped = false;
+    this.frameProgress = 0;
+  }
+
+  getTexture() {
+    return this.texture;
+  }
+
+  setTexture(texture) {
+    this.texture = texture;
+  }
+
+  update(ts) {
+    let currentAnimation = this.jas.animations.find(a => a.name == this.currentAnimationName);
+    if (!currentAnimation) {
+      return;
+    }
+
+    if (this.frameProgress >= currentAnimation.frameDuration) {
+      if (this.currentAnimationFrameIndex == currentAnimation.frames.length - 1) {
+        eventManager.emit(this, 'E_FINISHED');
+        this.currentAnimationFrameIndex = this.isLooped ? 0 : currentAnimation.frames.length - 1;
+        this.frameProgress = 0;
+      }
+      else {
+        this.currentAnimationFrameIndex = this.currentAnimationFrameIndex + 1;
+        this.frameProgress = 0;
+      }
+    }
+    else {
+      this.frameProgress += ts;
+    }
+  }
+
+  paint(ts) {
+    let currentAnimation = this.jas.animations.find(animation => animation.name == this.currentAnimationName);
+    if (!currentAnimation) {
+      return;
+    }
+
+    let ctx = gfx2Manager.getContext();
+    let currentFrame = currentAnimation.frames[this.currentAnimationFrameIndex];
+    ctx.drawImage(this.texture, currentFrame.x, currentFrame.y, currentFrame.width, currentFrame.height, 0, 0, currentFrame.width, currentFrame.height);
+  }
+
+  play(animationName, isLooped = false, preventSameAnimation = false) {
+    if (preventSameAnimation && animationName == this.currentAnimationName) {
+      return;
+    }
+
+    const animation = this.jas.animations.find(animation => animation.name == animationName);
+    if (!animation) {
+      throw new Error('Gfx2JAS::play: animation not found.');
+    }
+
+    this.currentAnimationName = animationName;
+    this.currentAnimationFrameIndex = 0;
+    this.isLooped = isLooped;
+    this.frameProgress = 0;
+  }
+
+  async loadFromFile(path) {
+    const response = await fetch(path);
+    const json = await response.json();
+
+    this.jas = new JAS();
+
+    for (let obj of json['Animations']) {
+      let animation = new JASAnimation();
+      animation.name = obj['Name'];
+      animation.frameDuration = parseInt(obj['FrameDuration']);
+
+      for (let objFrame of obj['Frames']) {
+        let frame = new JASFrame();
+        frame.x = objFrame['X'];
+        frame.y = objFrame['Y'];
+        frame.width = objFrame['Width'];
+        frame.height = objFrame['Height'];
+        animation.frames.push(frame);
+      }
+
+      this.jas.animations.push(animation);
+    }
+
+    this.currentAnimationName = '';
+    this.currentAnimationFrameIndex = 0;
+    this.frameProgress = 0;
+  }
+}
+
+module.exports.Gfx2JAS = Gfx2JAS;
+},{"../event/event_manager":6,"./gfx2_drawable":8,"./gfx2_manager":10,"./gfx2_texture_manager":13}],10:[function(require,module,exports){
+class Gfx2Manager {
+  constructor() {
+    this.canvas = null;
+    this.ctx = null;
+    this.cameraPosition = [0, 0];
+
+    this.canvas = document.getElementById('CANVAS_2D');
+    if (!this.canvas) {
+      throw new Error('Gfx2Manager::Gfx2Manager: CANVAS_2D not found');
+    }
+
+    this.ctx = this.canvas.getContext('2d');
+    if (!this.ctx) {
+      throw new Error('Gfx2Manager::Gfx2Manager: Your browser not support 2D');
+    }
+  }
+
+  update(ts) {
+    if (this.canvas.width != this.canvas.clientWidth || this.canvas.height != this.canvas.clientHeight) {
+      this.canvas.width = this.canvas.clientWidth;
+      this.canvas.height = this.canvas.clientHeight;
+    }
+  }
+
+  clear() {
+    this.ctx.restore();
+    this.ctx.save();
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);    
+    this.ctx.translate(-this.cameraPosition[0] + this.canvas.width * 0.5, -this.cameraPosition[1] + this.canvas.height * 0.5);
+  }
+
+  moveCamera(x, y) {
+    this.cameraPosition[0] += x;
+    this.cameraPosition[1] += y;
+  }
+
+  findCanvasFromClientPosition(clientX, clientY) {
+    let rect = this.canvas.getBoundingClientRect();
+    let x = clientX - rect.x;
+    let y = clientY - rect.y;
+    return [x, y];
+  }
+
+  findWorldFromClientPosition(clientX, clientY) {
+    let rect = this.canvas.getBoundingClientRect();
+    let x = (clientX - rect.x) + this.cameraPosition[0] - this.canvas.width * 0.5;
+    let y = (clientY - rect.y) + this.cameraPosition[1] - this.canvas.height * 0.5;
+    return [x, y];
+  }
+
+  getWidth() {
+    return this.canvas.clientWidth;
+  }
+
+  getHeight() {
+    return this.canvas.clientHeight;
+  }
+
+  getContext() {
+    return this.ctx;
+  }
+
+  setCameraPosition(x, y) {
+    this.cameraPosition[0] = x;
+    this.cameraPosition[1] = y;
+  }
+
+  getCameraPosition() {
+    return this.cameraPosition;
+  }
+
+  getCameraPositionX() {
+    return this.cameraPosition[0];
+  }
+
+  getCameraPositionY() {
+    return this.cameraPosition[1];
+  }
+}
+
+module.exports.gfx2Manager = new Gfx2Manager();
+},{}],11:[function(require,module,exports){
+let { gfx2TextureManager } = require('./gfx2_texture_manager');
+
+class Gfx2Map {
+  constructor() {
+    this.rows = 0;
+    this.columns = 0;
+    this.tileHeight = 0;
+    this.tileWidth = 0;
+    this.tileLayers = [];
+    this.tileset = new Gfx2Tileset();
+  }
+
+  async loadFromFile(path) {
+    let response = await fetch(path);
+    let json = await response.json();
+
+    this.rows = json['Rows'];
+    this.columns = json['Columns'];
+    this.tileHeight = json['TileHeight'];
+    this.tileWidth = json['TileWidth'];
+
+    for (let obj of json['Layers']) {
+      let tileLayer = new Gfx2TileLayer();
+      await tileLayer.loadFromData(obj);
+      this.tileLayers.push(tileLayer);
+    }
+
+    await this.tileset.loadFromData(json['Tileset']);
+  }
+
+  getWidth() {
+    return this.columns * this.tileWidth;
+  }
+
+  getHeight() {
+    return this.rows * this.tileHeight;
+  }
+
+  getRows() {
+    return this.rows;
+  }
+
+  getColumns() {
+    return this.columns;
+  }
+
+  getTileHeight() {
+    return this.tileHeight;
+  }
+
+  getTileWidth() {
+    return this.tileWidth;
+  }
+
+  getTileLayers() {
+    return this.tileLayers;
+  }
+
+  getTileLayer(index) {
+    return this.tileLayers[index];
+  }
+
+  getTileset() {
+    return this.tileset;
+  }
+}
+
+class Gfx2TileLayer {
+  constructor() {
+    this.name = '';
+    this.grid = [];
+    this.rows = 0;
+    this.columns = 0;
+    this.visible = true;
+  }
+
+  async loadFromData(data) {
+    this.name = data['Name'];
+    this.grid = data['Grid'];
+    this.rows = data['Rows'];
+    this.columns = data['Columns'];
+    this.visible = data['Visible'];
+  }
+
+  getLocationAt(index) {
+    let y = Math.floor(index / this.columns);
+    let x = index % this.columns;
+    return [x, y];
+  }
+
+  getTileCount() {
+    return this.grid.length;
+  }
+
+  getTile(index) {
+    return this.grid[index];
+  }
+
+  getName() {
+    return this.name;
+  }
+
+  getRows() {
+    return this.rows;
+  }
+
+  getColumns() {
+    return this.columns;
+  }
+
+  isVisible() {
+    return this.visible;
+  }
+
+  setVisible(visible) {
+    this.visible = visible;
+  }
+}
+
+class Gfx2Tileset {
+  constructor() {
+    this.textureWidth = 0;
+    this.textureHeight = 0;
+    this.tileWidth = 0;
+    this.tileHeight = 0;
+    this.columns = 0;
+    this.texture = gfx2TextureManager.getDefaultTexture();
+  }
+
+  async loadFromData(data) {
+    this.textureHeight = parseInt(data['TextureHeight']);
+    this.textureWidth = parseInt(data['TextureWidth']);
+    this.tileWidth = parseInt(data['TileWidth']);
+    this.tileHeight = parseInt(data['TileHeight']);
+    this.columns = parseInt(data['Columns']);
+    this.texture = await gfx2TextureManager.loadTexture(data['TextureFile']);
+  }
+
+  getTilePosition(tileId) {
+    let x = ((tileId - 1) % this.columns) * this.tileWidth;
+    let y = Math.floor((tileId - 1) / this.columns) * this.tileHeight;
+    return [x, y];
+  }
+
+  getTexture() {
+    return this.texture;
+  }
+
+  getColumn() {
+    return this.columns;
+  }
+
+  getTileHeight() {
+    return this.tileHeight;
+  }
+
+  getTileWidth() {
+    return this.tileWidth;
+  }
+
+  getTextureHeight() {
+    return this.textureHeight;
+  }
+
+  getTextureWidth() {
+    return this.textureWidth;
+  }
+}
+
+module.exports.Gfx2Map = Gfx2Map;
+},{"./gfx2_texture_manager":13}],12:[function(require,module,exports){
+let { Gfx2Drawable } = require('./gfx2_drawable');
+let { gfx2Manager } = require('./gfx2_manager');
+
+class Gfx2MapLayer extends Gfx2Drawable {
+  constructor(map, layerIndex) {
+    super();
+    this.map = map;
+    this.layerIndex = layerIndex;
+  }
+
+  paint(ts) {
+    let ctx = gfx2Manager.getContext();
+    let layer = this.map.getTileLayer(this.layerIndex);
+    let tileset = this.map.getTileset();
+
+    if (!layer) {
+      return;
+    }
+    if (!layer.isVisible()) {
+      return;
+    }
+
+    for (let i = 0; i < layer.getTileCount(); i++) {
+      let texTilePosition = tileset.getTilePosition(layer.getTile(i));
+      let texTileWidth = tileset.getTileWidth();
+      let texTileHeight = tileset.getTileHeight();
+      let location = layer.getLocationAt(i);
+      let x = Math.round(location[0] * this.map.getTileWidth());
+      let y = Math.round(location[1] * this.map.getTileHeight());
+      ctx.drawImage(tileset.getTexture(), texTilePosition[0], texTilePosition[1], texTileWidth, texTileHeight, x, y, this.map.getTileWidth(), this.map.getTileHeight());
+    }
+  }
+}
+
+module.exports.Gfx2MapLayer = Gfx2MapLayer;
+},{"./gfx2_drawable":8,"./gfx2_manager":10}],13:[function(require,module,exports){
+class Gfx2TextureManager {
+  constructor() {
+    this.textures = {};
+  }
+
+  async loadTexture(path) {
+    return new Promise(resolve => {
+      if (this.textures[path]) {
+        return resolve(this.textures[path]);
+      }
+
+      let image = new Image();
+      image.src = path;
+      image.addEventListener('load', () => {
+        this.textures[path] = image;
+        resolve(image);
+      });
+    });
+  }
+
+  deleteTexture(path) {
+    if (!this.textures[path]) {
+      throw new Error('Gfx2TextureManager::deleteTexture(): The texture file doesn\'t exist, cannot delete !');
+    }
+
+    this.textures[path] = null;
+    delete this.textures[path];
+  }
+
+  getTexture(path) {
+    if (!this.textures[path]) {
+      throw new Error('Gfx2TextureManager::getTexture(): The texture file doesn\'t exist, cannot get !');
+    }
+
+    return this.textures[path];
+  }
+
+  getDefaultTexture() {
+    let image = new Image();
+    image.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+    return image;
+  }
+
+  releaseTextures() {
+    for (let path in this.textures) {
+      this.textures[path] = null;
+      delete this.textures[path];
+    }
+  }
+}
+
+module.exports.gfx2TextureManager = new Gfx2TextureManager();
+},{}],14:[function(require,module,exports){
 let { Gfx3Drawable } = require('./gfx3_drawable');
 let { gfx3Manager } = require('./gfx3_manager');
 
@@ -678,7 +1251,7 @@ class Gfx3CollisionBox extends Gfx3Drawable {
 }
 
 module.exports.Gfx3CollisionBox = Gfx3CollisionBox;
-},{"./gfx3_drawable":9,"./gfx3_manager":15}],9:[function(require,module,exports){
+},{"./gfx3_drawable":15,"./gfx3_manager":21}],15:[function(require,module,exports){
 let { BoundingBox } = require('../bounding/bounding_box');
 let { Utils } = require('../helpers');
 
@@ -903,7 +1476,7 @@ class Gfx3Drawable {
 }
 
 module.exports.Gfx3Drawable = Gfx3Drawable;
-},{"../bounding/bounding_box":4,"../helpers":22}],10:[function(require,module,exports){
+},{"../bounding/bounding_box":4,"../helpers":28}],16:[function(require,module,exports){
 let { BoundingBox } = require('../bounding/bounding_box');
 let { Gfx3Drawable } = require('./gfx3_drawable');
 let { gfx3Manager } = require('./gfx3_manager');
@@ -1106,7 +1679,7 @@ class Gfx3JAM extends Gfx3Drawable {
 }
 
 module.exports.Gfx3JAM = Gfx3JAM;
-},{"../bounding/bounding_box":4,"../event/event_manager":6,"./gfx3_drawable":9,"./gfx3_manager":15,"./gfx3_texture_manager":19}],11:[function(require,module,exports){
+},{"../bounding/bounding_box":4,"../event/event_manager":6,"./gfx3_drawable":15,"./gfx3_manager":21,"./gfx3_texture_manager":25}],17:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { BoundingBox } = require('../bounding/bounding_box');
 let { Gfx3Drawable } = require('./gfx3_drawable');
@@ -1352,7 +1925,7 @@ class Gfx3JAS extends Gfx3Drawable {
 }
 
 module.exports.Gfx3JAS = Gfx3JAS;
-},{"../bounding/bounding_box":4,"../event/event_manager":6,"../helpers":22,"./gfx3_drawable":9,"./gfx3_manager":15,"./gfx3_texture_manager":19}],12:[function(require,module,exports){
+},{"../bounding/bounding_box":4,"../event/event_manager":6,"../helpers":28,"./gfx3_drawable":15,"./gfx3_manager":21,"./gfx3_texture_manager":25}],18:[function(require,module,exports){
 let { BoundingBox } = require('../bounding/bounding_box');
 let { Gfx3Drawable } = require('./gfx3_drawable');
 let { gfx3Manager } = require('./gfx3_manager');
@@ -1454,7 +2027,7 @@ class Gfx3JSM extends Gfx3Drawable {
 }
 
 module.exports.Gfx3JSM = Gfx3JSM;
-},{"../bounding/bounding_box":4,"./gfx3_drawable":9,"./gfx3_manager":15,"./gfx3_texture_manager":19}],13:[function(require,module,exports){
+},{"../bounding/bounding_box":4,"./gfx3_drawable":15,"./gfx3_manager":21,"./gfx3_texture_manager":25}],19:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { BoundingBox } = require('../bounding/bounding_box');
 let { Gfx3Drawable } = require('./gfx3_drawable');
@@ -1613,7 +2186,7 @@ class Gfx3JSS extends Gfx3Drawable {
 }
 
 module.exports.Gfx3JSS = Gfx3JSS;
-},{"../bounding/bounding_box":4,"../helpers":22,"./gfx3_drawable":9,"./gfx3_manager":15,"./gfx3_texture_manager":19}],14:[function(require,module,exports){
+},{"../bounding/bounding_box":4,"../helpers":28,"./gfx3_drawable":15,"./gfx3_manager":21,"./gfx3_texture_manager":25}],20:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { Gfx3Drawable } = require('./gfx3_drawable');
 let { gfx3Manager } = require('./gfx3_manager');
@@ -1754,7 +2327,7 @@ class Gfx3JWM extends Gfx3Drawable {
 }
 
 module.exports.Gfx3JWM = Gfx3JWM;
-},{"../helpers":22,"./gfx3_drawable":9,"./gfx3_manager":15}],15:[function(require,module,exports){
+},{"../helpers":28,"./gfx3_drawable":15,"./gfx3_manager":21}],21:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { DEFAULT_VERTEX_SHADER, DEFAULT_PIXEL_SHADER, DEBUG_VERTEX_SHADER, DEBUG_PIXEL_SHADER } = require('./gfx3_shaders');
 let { ProjectionModeEnum, Gfx3View } = require('./gfx3_view');
@@ -1776,9 +2349,9 @@ class Gfx3Manager {
     this.debugShaderUniforms = {};
     this.showDebug = false;
 
-    this.canvas = document.getElementById('CANVAS');
+    this.canvas = document.getElementById('CANVAS_3D');
     if (!this.canvas) {
-      throw new Error('Gfx3Manager::Gfx3Manager: CANVAS not found');
+      throw new Error('Gfx3Manager::Gfx3Manager: CANVAS_3D not found');
     }
 
     this.gl = this.canvas.getContext('webgl2');
@@ -2354,7 +2927,7 @@ function CREATE_SHADER(gl, type, source) {
 }
 
 module.exports.gfx3Manager = new Gfx3Manager();
-},{"../helpers":22,"./gfx3_shaders":17,"./gfx3_view":20}],16:[function(require,module,exports){
+},{"../helpers":28,"./gfx3_shaders":23,"./gfx3_view":26}],22:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { Gfx3Drawable } = require('./gfx3_drawable');
 let { gfx3Manager } = require('./gfx3_manager');
@@ -2524,7 +3097,7 @@ class Gfx3Mover extends Gfx3Drawable {
 }
 
 module.exports.Gfx3Mover = Gfx3Mover;
-},{"../event/event_manager":6,"../helpers":22,"./gfx3_drawable":9,"./gfx3_manager":15}],17:[function(require,module,exports){
+},{"../event/event_manager":6,"../helpers":28,"./gfx3_drawable":15,"./gfx3_manager":21}],23:[function(require,module,exports){
 module.exports.DEFAULT_VERTEX_SHADER = `
   attribute vec4 vPosition;
   attribute vec3 vNormal;
@@ -2577,7 +3150,7 @@ module.exports.DEBUG_PIXEL_SHADER = `
   }
 `;
 
-},{}],18:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 /**
  * Classe représentant une texture.
  */
@@ -2590,7 +3163,7 @@ class Gfx3Texture {
 }
 
 module.exports.Gfx3Texture = Gfx3Texture;
-},{}],19:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 let { Gfx3Texture } = require('./gfx3_texture');
 let { gfx3Manager } = require('./gfx3_manager');
 
@@ -2685,7 +3258,7 @@ class Gfx3TextureManager {
 }
 
 module.exports.gfx3TextureManager = new Gfx3TextureManager();
-},{"./gfx3_manager":15,"./gfx3_texture":18}],20:[function(require,module,exports){
+},{"./gfx3_manager":21,"./gfx3_texture":24}],26:[function(require,module,exports){
 let { Utils } = require('../helpers');
 let { Gfx3Viewport } = require('./gfx3_viewport');
 
@@ -2966,7 +3539,7 @@ class Gfx3View {
 
 module.exports.ProjectionModeEnum = ProjectionModeEnum;
 module.exports.Gfx3View = Gfx3View;
-},{"../helpers":22,"./gfx3_viewport":21}],21:[function(require,module,exports){
+},{"../helpers":28,"./gfx3_viewport":27}],27:[function(require,module,exports){
 /**
  * Classe représentant la position et la taille d'un rectangle de rendu.
  */
@@ -2980,7 +3553,7 @@ class Gfx3Viewport {
 }
 
 module.exports.Gfx3Viewport = Gfx3Viewport;
-},{}],22:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 class Utils {
   static BIND(fn, ctx) {
     return fn.bind(ctx);
@@ -3594,12 +4167,16 @@ class Utils {
 }
 
 module.exports.Utils = Utils;
-},{}],23:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 let { Application } = require('./application');
 let { ArrayCollection } = require('./array/array_collection');
 let { BoundingBox } = require('./bounding/bounding_box');
 let { BoundingRect } = require('./bounding/bounding_rect');
 let { EventSubscriber } = require('./event/event_subscriber');
+let { Gfx2Drawable } = require('./gfx2/gfx2_drawable');
+let { Gfx2JAS } = require('./gfx2/gfx2_jas');
+let { Gfx2MapLayer } = require('./gfx2/gfx2_map_layer');
+let { Gfx2Map } = require('./gfx2/gfx2_map');
 let { Gfx3CollisionBox } = require('./gfx3/gfx3_collisionbox');
 let { Gfx3Drawable } = require('./gfx3/gfx3_drawable');
 let { Gfx3JAM } = require('./gfx3/gfx3_jam');
@@ -3633,11 +4210,14 @@ let { UISprite } = require('./ui/ui_sprite');
 let { UIText } = require('./ui/ui_text');
 let { UIWidget } = require('./ui/ui_widget');
 let { Utils } = require('./helpers');
-let { SizeModeEnum } = require('./application');
+let { SizeModeEnum, RenderingModeEnum } = require('./application');
 let { ProjectionModeEnum } = require('./gfx3/gfx3_view');
 let { MenuFocusEnum } = require('./ui/ui_menu');
 let { MenuAxisEnum } = require('./ui/ui_menu');
+
 let { inputManager } = require('./input/input_manager');
+let { gfx2Manager } = require('./gfx2/gfx2_manager');
+let { gfx2TextureManager } = require('./gfx2/gfx2_texture_manager');
 let { gfx3Manager } = require('./gfx3/gfx3_manager');
 let { gfx3TextureManager } = require('./gfx3/gfx3_texture_manager');
 let { eventManager } = require('./event/event_manager');
@@ -3651,6 +4231,10 @@ module.exports.GWE = {
   BoundingBox,
   BoundingRect,
   EventSubscriber,
+  Gfx2Drawable,
+  Gfx2JAS,
+  Gfx2MapLayer,
+  Gfx2Map,
   Gfx3CollisionBox,
   Gfx3Drawable,
   Gfx3JAM,
@@ -3685,10 +4269,14 @@ module.exports.GWE = {
   UIWidget,
   Utils,
   SizeModeEnum,
+  RenderingModeEnum,
   ProjectionModeEnum,
   MenuFocusEnum,
   MenuAxisEnum,
+
   inputManager,
+  gfx2Manager,
+  gfx2TextureManager,
   gfx3Manager,
   gfx3TextureManager,
   eventManager,
@@ -3696,7 +4284,7 @@ module.exports.GWE = {
   soundManager,
   uiManager
 };
-},{"./application":2,"./array/array_collection":3,"./bounding/bounding_box":4,"./bounding/bounding_rect":5,"./event/event_manager":6,"./event/event_subscriber":7,"./gfx3/gfx3_collisionbox":8,"./gfx3/gfx3_drawable":9,"./gfx3/gfx3_jam":10,"./gfx3/gfx3_jas":11,"./gfx3/gfx3_jsm":12,"./gfx3/gfx3_jss":13,"./gfx3/gfx3_jwm":14,"./gfx3/gfx3_manager":15,"./gfx3/gfx3_mover":16,"./gfx3/gfx3_shaders":17,"./gfx3/gfx3_texture":18,"./gfx3/gfx3_texture_manager":19,"./gfx3/gfx3_view":20,"./gfx3/gfx3_viewport":21,"./helpers":22,"./input/input_manager":24,"./screen/screen":25,"./screen/screen_manager":26,"./script/script_machine":27,"./sound/sound_manager":28,"./ui/ui_bubble":29,"./ui/ui_description_list":30,"./ui/ui_dialog":31,"./ui/ui_input_range":32,"./ui/ui_input_select":33,"./ui/ui_input_slider":34,"./ui/ui_input_text":35,"./ui/ui_keyboard":36,"./ui/ui_list_view":37,"./ui/ui_manager":38,"./ui/ui_menu":39,"./ui/ui_menu_item_text":40,"./ui/ui_message":41,"./ui/ui_print":42,"./ui/ui_prompt":43,"./ui/ui_sprite":44,"./ui/ui_text":45,"./ui/ui_widget":46}],24:[function(require,module,exports){
+},{"./application":2,"./array/array_collection":3,"./bounding/bounding_box":4,"./bounding/bounding_rect":5,"./event/event_manager":6,"./event/event_subscriber":7,"./gfx2/gfx2_drawable":8,"./gfx2/gfx2_jas":9,"./gfx2/gfx2_manager":10,"./gfx2/gfx2_map":11,"./gfx2/gfx2_map_layer":12,"./gfx2/gfx2_texture_manager":13,"./gfx3/gfx3_collisionbox":14,"./gfx3/gfx3_drawable":15,"./gfx3/gfx3_jam":16,"./gfx3/gfx3_jas":17,"./gfx3/gfx3_jsm":18,"./gfx3/gfx3_jss":19,"./gfx3/gfx3_jwm":20,"./gfx3/gfx3_manager":21,"./gfx3/gfx3_mover":22,"./gfx3/gfx3_shaders":23,"./gfx3/gfx3_texture":24,"./gfx3/gfx3_texture_manager":25,"./gfx3/gfx3_view":26,"./gfx3/gfx3_viewport":27,"./helpers":28,"./input/input_manager":30,"./screen/screen":31,"./screen/screen_manager":32,"./script/script_machine":33,"./sound/sound_manager":34,"./ui/ui_bubble":35,"./ui/ui_description_list":36,"./ui/ui_dialog":37,"./ui/ui_input_range":38,"./ui/ui_input_select":39,"./ui/ui_input_slider":40,"./ui/ui_input_text":41,"./ui/ui_keyboard":42,"./ui/ui_list_view":43,"./ui/ui_manager":44,"./ui/ui_menu":45,"./ui/ui_menu_item_text":46,"./ui/ui_message":47,"./ui/ui_print":48,"./ui/ui_prompt":49,"./ui/ui_sprite":50,"./ui/ui_text":51,"./ui/ui_widget":52}],30:[function(require,module,exports){
 class InputManager {
   constructor() {
     this.keymap = {};
@@ -3718,7 +4306,7 @@ class InputManager {
 }
 
 module.exports.inputManager = new InputManager();
-},{}],25:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 /**
  * Classe représentant un écran.
  */
@@ -3788,7 +4376,7 @@ class Screen {
 }
 
 module.exports.Screen = Screen;
-},{}],26:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 /**
  * Singleton représentant un gestionnaire d'écrans.
  */
@@ -3889,7 +4477,7 @@ class ScreenManager {
 }
 
 module.exports.screenManager = new ScreenManager();
-},{}],27:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 let fs = require('fs');
 
 class JSC {
@@ -4064,7 +4652,7 @@ class ScriptMachine {
 }
 
 module.exports.ScriptMachine = ScriptMachine;
-},{"fs":1}],28:[function(require,module,exports){
+},{"fs":1}],34:[function(require,module,exports){
 /**
  * Singleton représentant un gestionnaire de ressources son.
  */
@@ -4139,7 +4727,7 @@ class SoundManager {
 }
 
 module.exports.soundManager = new SoundManager();
-},{}],29:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 let { UIMenu } = require('./ui_menu');
@@ -4252,7 +4840,7 @@ class UIBubble extends UIWidget {
 }
 
 module.exports.UIBubble = UIBubble;
-},{"../event/event_manager":6,"./ui_menu":39,"./ui_menu_item_text":40,"./ui_widget":46}],30:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_menu":45,"./ui_menu_item_text":46,"./ui_widget":52}],36:[function(require,module,exports){
 let { UIWidget } = require('./ui_widget');
 
 class UIDescriptionList extends UIWidget {
@@ -4324,7 +4912,7 @@ class UIDescriptionList extends UIWidget {
 }
 
 module.exports.UIDescriptionList = UIDescriptionList;
-},{"./ui_widget":46}],31:[function(require,module,exports){
+},{"./ui_widget":52}],37:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -4395,7 +4983,7 @@ class UIDialog extends UIWidget {
 }
 
 module.exports.UIDialog = UIDialog;
-},{"../event/event_manager":6,"./ui_widget":46}],32:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],38:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -4451,7 +5039,7 @@ class UIInputRange extends UIWidget {
 }
 
 module.exports.UIInputRange = UIInputRange;
-},{"../event/event_manager":6,"./ui_widget":46}],33:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],39:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIMenuItemText } = require('./ui_menu_item_text');
 let { UIMenu } = require('./ui_menu');
@@ -4521,7 +5109,7 @@ class UIInputSelectMultiple extends UIMenu {
 
 module.exports.UIInputSelect = UIInputSelect;
 module.exports.UIInputSelectMultiple = UIInputSelectMultiple;
-},{"../event/event_manager":6,"./ui_menu":39,"./ui_menu_item_text":40}],34:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_menu":45,"./ui_menu_item_text":46}],40:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -4581,9 +5169,9 @@ class UIInputSlider extends UIWidget {
 }
 
 module.exports.UIInputSlider = UIInputSlider;
-},{"../event/event_manager":6,"./ui_widget":46}],35:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],41:[function(require,module,exports){
 module.exports.UIInputText = {};
-},{}],36:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -4775,7 +5363,7 @@ class UIKeyboard extends UIWidget {
 }
 
 module.exports.UIKeyboard = UIKeyboard;
-},{"../event/event_manager":6,"./ui_widget":46}],37:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],43:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { ArrayCollection } = require('../array/array_collection');
 let { UIMenu } = require('./ui_menu');
@@ -4882,7 +5470,7 @@ class UIListView extends UIMenu {
 }
 
 module.exports.UIListView = UIListView;
-},{"../array/array_collection":3,"../event/event_manager":6,"./ui_menu":39}],38:[function(require,module,exports){
+},{"../array/array_collection":3,"../event/event_manager":6,"./ui_menu":45}],44:[function(require,module,exports){
 let { eventManager} = require('../event/event_manager');
 const { UIWidget } = require('./ui_widget');
 
@@ -5066,7 +5654,7 @@ class UIManager {
 }
 
 module.exports.uiManager = new UIManager();
-},{"../event/event_manager":6,"./ui_widget":46}],39:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],45:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -5321,7 +5909,7 @@ class UIMenu extends UIWidget {
 module.exports.MenuFocusEnum = MenuFocusEnum;
 module.exports.MenuAxisEnum = MenuAxisEnum;
 module.exports.UIMenu = UIMenu;
-},{"../event/event_manager":6,"./ui_widget":46}],40:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],46:[function(require,module,exports){
 let { UIWidget } = require('./ui_widget');
 
 class UIMenuItemText extends UIWidget {
@@ -5339,7 +5927,7 @@ class UIMenuItemText extends UIWidget {
 }
 
 module.exports.UIMenuItemText = UIMenuItemText;
-},{"./ui_widget":46}],41:[function(require,module,exports){
+},{"./ui_widget":52}],47:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -5417,7 +6005,7 @@ class UIMessage extends UIWidget {
 }
 
 module.exports.UIMessage = UIMessage;
-},{"../event/event_manager":6,"./ui_widget":46}],42:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],48:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -5483,7 +6071,7 @@ class UIPrint extends UIWidget {
 }
 
 module.exports.UIPrint = UIPrint;
-},{"../event/event_manager":6,"./ui_widget":46}],43:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],49:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 let { UIMenuItemText } = require('./ui_menu_item_text');
@@ -5540,7 +6128,7 @@ class UIPrompt extends UIWidget {
 }
 
 module.exports.UIPrompt = UIPrompt;
-},{"../event/event_manager":6,"./ui_menu":39,"./ui_menu_item_text":40,"./ui_widget":46}],44:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_menu":45,"./ui_menu_item_text":46,"./ui_widget":52}],50:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 let { UIWidget } = require('./ui_widget');
 
@@ -5668,7 +6256,7 @@ class UISprite extends UIWidget {
 }
 
 module.exports.UISprite = UISprite;
-},{"../event/event_manager":6,"./ui_widget":46}],45:[function(require,module,exports){
+},{"../event/event_manager":6,"./ui_widget":52}],51:[function(require,module,exports){
 let { UIWidget } = require('./ui_widget');
 
 class UIText extends UIWidget {
@@ -5685,7 +6273,7 @@ class UIText extends UIWidget {
 }
 
 module.exports.UIText = UIText;
-},{"./ui_widget":46}],46:[function(require,module,exports){
+},{"./ui_widget":52}],52:[function(require,module,exports){
 let { eventManager } = require('../event/event_manager');
 
 /**
@@ -5840,7 +6428,7 @@ class UIWidget {
 }
 
 module.exports.UIWidget = UIWidget;
-},{"../event/event_manager":6}],47:[function(require,module,exports){
+},{"../event/event_manager":6}],53:[function(require,module,exports){
 window.addEventListener('load', async () => {
   let { GWE } = require('gwe');
   let { BootScreen } = require('./screens/boot_screen');
@@ -5850,7 +6438,7 @@ window.addEventListener('load', async () => {
   GWE.screenManager.requestSetScreen(new BootScreen(gameManager));
   requestAnimationFrame(ts => gameManager.run(ts));
 });
-},{"./game_manager":67,"./screens/boot_screen":68,"gwe":23}],48:[function(require,module,exports){
+},{"./game_manager":73,"./screens/boot_screen":74,"gwe":29}],54:[function(require,module,exports){
 class Attributes {
   constructor(data) {
     this.map = data;
@@ -5971,7 +6559,7 @@ class Attributes {
 }
 
 module.exports.Attributes = Attributes;
-},{}],49:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { EnemyCharacter } = require('./enemy_character');
 let { NewTurnBattleAction, ApplyEffectBattleAction, LetBattleAction } = require('./battle_actions');
@@ -6099,6 +6687,7 @@ class Battle {
   }
 
   async operationLet(fromChar) {
+    fromChar.setReady(false);
     this.characterQueue.splice(this.characterQueue.indexOf(fromChar), 1);
   }
 
@@ -6107,6 +6696,7 @@ class Battle {
     let attributes = fromChar.getAttributes();
     attributes.add('MP', - effect.getCost());
 
+    fromChar.setReady(false);
     this.characterQueue.splice(this.characterQueue.indexOf(fromChar), 1);
   }
 
@@ -6116,6 +6706,8 @@ class Battle {
 
     await effect.apply(fromChar, toChar);
     inventory.removeItemById(item.getId());
+
+    fromChar.setReady(false);
     this.characterQueue.splice(this.characterQueue.indexOf(fromChar), 1);
   }
 
@@ -6162,7 +6754,7 @@ class Battle {
 }
 
 module.exports.Battle = Battle;
-},{"../game_manager":67,"./battle_actions":50,"./enemy_character":54,"gwe":23}],50:[function(require,module,exports){
+},{"../game_manager":73,"./battle_actions":56,"./enemy_character":60,"gwe":29}],56:[function(require,module,exports){
 class BattleAction {
   constructor(battle) {
     this.battle = battle;
@@ -6222,7 +6814,7 @@ module.exports.LetBattleAction = LetBattleAction;
 module.exports.ApplyEffectBattleAction = ApplyEffectBattleAction;
 module.exports.ApplyItemBattleAction = ApplyItemBattleAction;
 module.exports.NewTurnBattleAction = NewTurnBattleAction;
-},{}],51:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { Attributes } = require('./attributes');
 let { Effect } = require('./effect');
@@ -6379,7 +6971,7 @@ function GET_ELEMENTAL_OPPOSITION_FACTOR(attackElement, defendElement) {
 }
 
 module.exports.CharacterAbstract = CharacterAbstract;
-},{"./attributes":48,"./effect":53,"./enums":55,"gwe":23}],52:[function(require,module,exports){
+},{"./attributes":54,"./effect":59,"./enums":61,"gwe":29}],58:[function(require,module,exports){
 let { ItemAbstract } = require('./item_abstract');
 let { Effect } = require('./effect');
 
@@ -6421,7 +7013,7 @@ class CommonItem extends ItemAbstract {
 }
 
 module.exports.CommonItem = CommonItem;
-},{"./effect":53,"./item_abstract":59}],53:[function(require,module,exports){
+},{"./effect":59,"./item_abstract":65}],59:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { EFFECT_TARGET_CONDITION_MAPPING } = require('./mappings/effect_target_condition_mapping');
 let { EFFECT_MECHANIC_MAPPING } = require('./mappings/effect_mechanic_mapping');
@@ -6524,7 +7116,7 @@ class Effect {
 }
 
 module.exports.Effect = Effect;
-},{"./enums":55,"./mappings/effect_mechanic_mapping":60,"./mappings/effect_target_condition_mapping":61,"gwe":23}],54:[function(require,module,exports){
+},{"./enums":61,"./mappings/effect_mechanic_mapping":66,"./mappings/effect_target_condition_mapping":67,"gwe":29}],60:[function(require,module,exports){
 let { CharacterAbstract } = require('./character_abstract');
 let { Effect } = require('./effect');
 let { ENEMY_PATTERN_CONDITION_MAPPING } = require('./mappings/enemy_pattern_condition_mapping');
@@ -6607,7 +7199,7 @@ class EnemyPattern {
 
 module.exports.EnemyCharacter = EnemyCharacter;
 module.exports.EnemyPattern = EnemyPattern;
-},{"./character_abstract":51,"./effect":53,"./mappings/enemy_pattern_condition_mapping":62,"./mappings/enemy_pattern_target_sort_mapping":63}],55:[function(require,module,exports){
+},{"./character_abstract":57,"./effect":59,"./mappings/enemy_pattern_condition_mapping":68,"./mappings/enemy_pattern_target_sort_mapping":69}],61:[function(require,module,exports){
 module.exports.CHARACTER_TYPE = {
   ENEMY: 'ENEMY',
   ALLY: 'ALLY'
@@ -6648,7 +7240,7 @@ module.exports.ELEMENT = {
   BLACK: 'BLACK',
   WHITE: 'WHITE'
 };
-},{}],56:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 let { Modifier } = require('./modifier');
 let { ItemAbstract } = require('./item_abstract');
 
@@ -6684,7 +7276,7 @@ class EquipmentItem extends ItemAbstract {
 }
 
 module.exports.EquipmentItem = EquipmentItem;
-},{"./item_abstract":59,"./modifier":64}],57:[function(require,module,exports){
+},{"./item_abstract":65,"./modifier":70}],63:[function(require,module,exports){
 let { CharacterAbstract } = require('./character_abstract');
 let { EquipmentItem } = require('./equipment_item');
 let { ITEM_TYPE } = require('./enums');
@@ -6829,7 +7421,7 @@ class HeroCharacter extends CharacterAbstract {
 }
 
 module.exports.HeroCharacter = HeroCharacter;
-},{"./character_abstract":51,"./enums":55,"./equipment_item":56}],58:[function(require,module,exports){
+},{"./character_abstract":57,"./enums":61,"./equipment_item":62}],64:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { EquipmentItem } = require('./equipment_item');
 let { CommonItem } = require('./common_item');
@@ -6913,7 +7505,7 @@ class Inventory extends GWE.ArrayCollection {
 }
 
 module.exports.Inventory = Inventory;
-},{"./common_item":52,"./equipment_item":56,"gwe":23}],59:[function(require,module,exports){
+},{"./common_item":58,"./equipment_item":62,"gwe":29}],65:[function(require,module,exports){
 class ItemAbstract {
   constructor() {
     this.id = '';
@@ -6974,7 +7566,7 @@ class ItemAbstract {
 }
 
 module.exports.ItemAbstract = ItemAbstract;
-},{}],60:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 let { Seal } = require('../seal');
 let EFFECT_MECHANIC_MAPPING = {};
 
@@ -7009,7 +7601,7 @@ EFFECT_MECHANIC_MAPPING['REMOVE_SEAL'] = async function (fromChar, toChar, opts 
 }
 
 module.exports.EFFECT_MECHANIC_MAPPING = EFFECT_MECHANIC_MAPPING;
-},{"../seal":66}],61:[function(require,module,exports){
+},{"../seal":72}],67:[function(require,module,exports){
 let EFFECT_TARGET_CONDITION_MAPPING = {};
 
 EFFECT_TARGET_CONDITION_MAPPING['IS_ALL'] = function (fromChar, toChar, opts) {
@@ -7037,7 +7629,7 @@ EFFECT_TARGET_CONDITION_MAPPING['IS_ALIVE_OPPONENT'] = function (fromChar, toCha
 }
 
 module.exports.EFFECT_TARGET_CONDITION_MAPPING = EFFECT_TARGET_CONDITION_MAPPING;
-},{}],62:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 let ENEMY_PATTERN_CONDITION_MAPPING = {};
 
 ENEMY_PATTERN_CONDITION_MAPPING['SELF_HAS_LOWER_HP'] = function (battle, enemy, opts) {
@@ -7055,7 +7647,7 @@ ENEMY_PATTERN_CONDITION_MAPPING['ALLY_HAS_LOWER_HP'] = function (battle, enemy, 
 }
 
 module.exports.ENEMY_PATTERN_CONDITION_MAPPING = ENEMY_PATTERN_CONDITION_MAPPING;
-},{}],63:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 let ENEMY_PATTERN_TARGET_SORT_MAPPING = {};
 
 ENEMY_PATTERN_TARGET_SORT_MAPPING['LOWEST_HP'] = function (a, b) {
@@ -7067,7 +7659,7 @@ ENEMY_PATTERN_TARGET_SORT_MAPPING['HIGHEST_HP'] = function (a, b) {
 }
 
 module.exports.ENEMY_PATTERN_TARGET_SORT_MAPPING = ENEMY_PATTERN_TARGET_SORT_MAPPING;
-},{}],64:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 class Modifier {
   constructor(data) {
     this.type = '';
@@ -7111,7 +7703,7 @@ class Modifier {
 }
 
 module.exports.Modifier = Modifier;
-},{}],65:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { HeroCharacter } = require('./hero_character');
 let { Inventory } = require('./inventory');
@@ -7168,7 +7760,7 @@ class Player {
 }
 
 module.exports.Player = Player;
-},{"./hero_character":57,"./inventory":58,"gwe":23}],66:[function(require,module,exports){
+},{"./hero_character":63,"./inventory":64,"gwe":29}],72:[function(require,module,exports){
 let { Effect } = require('./effect');
 let { Modifier } = require('./modifier');
 
@@ -7251,7 +7843,7 @@ class Seal {
 }
 
 module.exports.Seal = Seal;
-},{"./effect":53,"./modifier":64}],67:[function(require,module,exports){
+},{"./effect":59,"./modifier":70}],73:[function(require,module,exports){
 let { GWE } = require('gwe');
 const { Player } = require('./core/player');
 
@@ -7272,7 +7864,7 @@ class Game extends GWE.Application {
 }
 
 module.exports.gameManager = new Game(600, 600, GWE.SizeModeEnum.FIXED);
-},{"./core/player":65,"gwe":23}],68:[function(require,module,exports){
+},{"./core/player":71,"gwe":29}],74:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { GameScreen } = require('./game_screen');
 let { MenuScreen } = require('./menu_screen');
@@ -7312,7 +7904,7 @@ class BootScreen extends GWE.Screen {
 }
 
 module.exports.BootScreen = BootScreen;
-},{"./game_screen":69,"./menu_screen":72,"./shop_screen":74,"gwe":23}],69:[function(require,module,exports){
+},{"./game_screen":75,"./menu_screen":78,"./shop_screen":80,"gwe":29}],75:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { HeroCharacter } = require('../core/hero_character');
 let { Battle } = require('../core/battle');
@@ -7528,7 +8120,7 @@ class GameScreen extends GWE.Screen {
 }
 
 module.exports.GameScreen = GameScreen;
-},{"../core/battle":49,"../core/battle_actions":50,"../core/common_item":52,"../core/hero_character":57,"../game_manager":67,"../ui/ui_battle_area":75,"../ui/ui_battle_heroes":77,"../ui/ui_battle_status":78,"../ui/ui_effects":79,"../ui/ui_inventory":82,"gwe":23}],70:[function(require,module,exports){
+},{"../core/battle":55,"../core/battle_actions":56,"../core/common_item":58,"../core/hero_character":63,"../game_manager":73,"../ui/ui_battle_area":81,"../ui/ui_battle_heroes":83,"../ui/ui_battle_status":84,"../ui/ui_effects":85,"../ui/ui_inventory":88,"gwe":29}],76:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { EquipmentItem } = require('../core/equipment_item');
 let { ITEM_TYPE } = require('../core/enums');
@@ -7732,7 +8324,7 @@ class MenuEquipmentsScreen extends GWE.Screen {
 }
 
 module.exports.MenuEquipmentsScreen = MenuEquipmentsScreen;
-},{"../core/enums":55,"../core/equipment_item":56,"../game_manager":67,"../ui/ui_heroes_equipment":81,"../ui/ui_inventory":82,"gwe":23}],71:[function(require,module,exports){
+},{"../core/enums":61,"../core/equipment_item":62,"../game_manager":73,"../ui/ui_heroes_equipment":87,"../ui/ui_inventory":88,"gwe":29}],77:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { CommonItem } = require('../core/common_item');
 let { ITEM_TYPE } = require('../core/enums');
@@ -7933,7 +8525,7 @@ class MenuItemsScreen extends GWE.Screen {
 }
 
 module.exports.MenuItemsScreen = MenuItemsScreen;
-},{"../core/common_item":52,"../core/enums":55,"../game_manager":67,"../ui/ui_heroes":80,"../ui/ui_inventory":82,"gwe":23}],72:[function(require,module,exports){
+},{"../core/common_item":58,"../core/enums":61,"../game_manager":73,"../ui/ui_heroes":86,"../ui/ui_inventory":88,"gwe":29}],78:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { MenuEquipmentsScreen } = require('./menu_equipments_screen');
 let { MenuItemsScreen } = require('./menu_items_screen');
@@ -8012,7 +8604,7 @@ class MenuScreen extends GWE.Screen {
 }
 
 module.exports.MenuScreen = MenuScreen;
-},{"../game_manager":67,"../ui/ui_heroes":80,"./menu_equipments_screen":70,"./menu_items_screen":71,"./menu_status_screen":73,"gwe":23}],73:[function(require,module,exports){
+},{"../game_manager":73,"../ui/ui_heroes":86,"./menu_equipments_screen":76,"./menu_items_screen":77,"./menu_status_screen":79,"gwe":29}],79:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { UIStatus } = require('../ui/ui_status');
 
@@ -8049,7 +8641,7 @@ class MenuStatusScreen extends GWE.Screen {
 }
 
 module.exports.MenuStatusScreen = MenuStatusScreen;
-},{"../ui/ui_status":83,"gwe":23}],74:[function(require,module,exports){
+},{"../ui/ui_status":89,"gwe":29}],80:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { Inventory } = require('../core/inventory');
 let { UIInventory } = require('../ui/ui_inventory');
@@ -8219,7 +8811,7 @@ class ShopScreen extends GWE.Screen {
 
 module.exports.SHOP_SCREEN_MODE = SHOP_SCREEN_MODE;
 module.exports.ShopScreen = ShopScreen;
-},{"../core/inventory":58,"../game_manager":67,"../ui/ui_heroes":80,"../ui/ui_heroes_equipment":81,"../ui/ui_inventory":82,"gwe":23}],75:[function(require,module,exports){
+},{"../core/inventory":64,"../game_manager":73,"../ui/ui_heroes":86,"../ui/ui_heroes_equipment":87,"../ui/ui_inventory":88,"gwe":29}],81:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { UIBattleAreaFighter } = require('./ui_battle_area_fighter');
 
@@ -8396,7 +8988,7 @@ function CREATE_ENEMY_FIGHTER(enemy, position) {
 }
 
 module.exports.UIBattleArea = UIBattleArea;
-},{"./ui_battle_area_fighter":76,"gwe":23}],76:[function(require,module,exports){
+},{"./ui_battle_area_fighter":82,"gwe":29}],82:[function(require,module,exports){
 let { GWE } = require('gwe');
 let { HeroCharacter } = require('../core/hero_character');
 
@@ -8633,7 +9225,7 @@ function DRAW_TOAST(node, text, color, ms) {
 }
 
 module.exports.UIBattleAreaFighter = UIBattleAreaFighter;
-},{"../core/hero_character":57,"gwe":23}],77:[function(require,module,exports){
+},{"../core/hero_character":63,"gwe":29}],83:[function(require,module,exports){
 let { GWE } = require('gwe');
 
 class UIBattleHeroes extends GWE.UIListView {
@@ -8708,7 +9300,7 @@ class UIBattleHeroesItem extends GWE.UIWidget {
 }
 
 module.exports.UIBattleHeroes = UIBattleHeroes;
-},{"gwe":23}],78:[function(require,module,exports){
+},{"gwe":29}],84:[function(require,module,exports){
 let { GWE } = require('gwe');
 
 class UIBattleStatus extends GWE.UIWidget {
@@ -8746,7 +9338,7 @@ class UIBattleStatus extends GWE.UIWidget {
 }
 
 module.exports.UIBattleStatus = UIBattleStatus;
-},{"gwe":23}],79:[function(require,module,exports){
+},{"gwe":29}],85:[function(require,module,exports){
 let { GWE } = require('gwe');
 
 class UIEffects extends GWE.UIListView {
@@ -8791,7 +9383,7 @@ class UIEffectsItem extends GWE.UIWidget {
 }
 
 module.exports.UIEffects = UIEffects;
-},{"gwe":23}],80:[function(require,module,exports){
+},{"gwe":29}],86:[function(require,module,exports){
 let { GWE } = require('gwe');
 
 class UIHeroes extends GWE.UIListView {
@@ -8857,7 +9449,7 @@ class UIHeroesItem extends GWE.UIWidget {
 }
 
 module.exports.UIHeroes = UIHeroes;
-},{"gwe":23}],81:[function(require,module,exports){
+},{"gwe":29}],87:[function(require,module,exports){
 let { GWE } = require('gwe');
 
 class UIHeroesEquipment extends GWE.UIListView {
@@ -8986,7 +9578,7 @@ class UIHeroesEquipmentItem extends GWE.UIWidget {
 }
 
 module.exports.UIHeroesEquipment = UIHeroesEquipment;
-},{"gwe":23}],82:[function(require,module,exports){
+},{"gwe":29}],88:[function(require,module,exports){
 const { GWE } = require("gwe");
 
 class UIInventory extends GWE.UIListView {
@@ -9053,7 +9645,7 @@ class UIInventoryItem extends GWE.UIWidget {
 }
 
 module.exports.UIInventory = UIInventory;
-},{"gwe":23}],83:[function(require,module,exports){
+},{"gwe":29}],89:[function(require,module,exports){
 let { GWE } = require('gwe');
 
 class UIStatus extends GWE.UIWidget {
@@ -9203,4 +9795,4 @@ class UIStatus extends GWE.UIWidget {
 }
 
 module.exports.UIStatus = UIStatus;
-},{"gwe":23}]},{},[47]);
+},{"gwe":29}]},{},[53]);

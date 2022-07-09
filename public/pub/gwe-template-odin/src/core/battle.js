@@ -125,6 +125,7 @@ class Battle {
   }
 
   async operationLet(fromChar) {
+    fromChar.setReady(false);
     this.characterQueue.splice(this.characterQueue.indexOf(fromChar), 1);
   }
 
@@ -133,6 +134,7 @@ class Battle {
     let attributes = fromChar.getAttributes();
     attributes.add('MP', - effect.getCost());
 
+    fromChar.setReady(false);
     this.characterQueue.splice(this.characterQueue.indexOf(fromChar), 1);
   }
 
@@ -142,6 +144,8 @@ class Battle {
 
     await effect.apply(fromChar, toChar);
     inventory.removeItemById(item.getId());
+
+    fromChar.setReady(false);
     this.characterQueue.splice(this.characterQueue.indexOf(fromChar), 1);
   }
 
